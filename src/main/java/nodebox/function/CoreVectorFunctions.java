@@ -8,7 +8,9 @@ import nodebox.graphics.*;
 import nodebox.handle.*;
 import nodebox.util.ChaikinSmoothing;
 import nodebox.util.ConvexHull;
+import nodebox.util.CornerRounding;
 import nodebox.util.DelaunayVoronoi;
+import nodebox.util.Duplicator;
 import nodebox.util.MathUtils;
 import nodebox.util.SimplexNoise;
 
@@ -62,6 +64,7 @@ public class CoreVectorFunctions {
                 "typeset", "fitText", "textOnPath", "halftone", "truchetTiles", "guilloche", "metaballs",
                 "modularGrid", "alignDistribute", "packCircles", "roughen", "longShadow", "extrude3d",
                 "booleanOperation", "strokeStyle", "morph", "artboard",
+                "roundCorners", "duplicator",
                 "fourPointHandle", "freehandHandle", "lineAngleHandle", "lineHandle", "pointHandle", "snapHandle",
                 "translateHandle");
     }
@@ -1773,6 +1776,26 @@ public class CoreVectorFunctions {
 
     public static nodebox.graphics.Artboard artboard(IGeometry shape, String name, String preset, double width, double height, Point position, boolean clip, Color background, boolean showFrame) {
         return new nodebox.graphics.Artboard(name, preset, width, height, position, clip, background, showFrame, shape);
+    }
+
+    public static Geometry roundCorners(IGeometry shape, double radius, String type, double threshold, boolean clamp) {
+        if (shape == null) return null;
+        Geometry g = shape instanceof Geometry ? (Geometry) shape : ((Path) shape).asGeometry();
+        return CornerRounding.roundCorners(g, radius, type, threshold, clamp);
+    }
+
+    public static List<Geometry> duplicator(IGeometry shape, String mode, long count, double spacing, double angle,
+                                            long columns, long rows, double spacingX, double spacingY, double stagger,
+                                            double radius, double startAngle, double endAngle, boolean orient,
+                                            double growthRate, double angleStep, IGeometry targetPath,
+                                            double stepRotation, double stepScale, double stepOpacity,
+                                            double jitterPos, double jitterRot, double jitterScale, long seed) {
+        if (shape == null) return ImmutableList.of();
+        Geometry g = shape instanceof Geometry ? (Geometry) shape : ((Path) shape).asGeometry();
+        Geometry pathGeo = targetPath != null ? (targetPath instanceof Geometry ? (Geometry) targetPath : ((Path) targetPath).asGeometry()) : null;
+        return Duplicator.duplicate(g, mode, count, spacing, angle, columns, rows, spacingX, spacingY, stagger,
+                radius, startAngle, endAngle, orient, growthRate, angleStep, pathGeo,
+                stepRotation, stepScale, stepOpacity, jitterPos, jitterRot, jitterScale, seed);
     }
 
 }

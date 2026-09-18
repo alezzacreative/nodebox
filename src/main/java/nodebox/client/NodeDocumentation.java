@@ -248,6 +248,39 @@ public class NodeDocumentation {
         registerPort("artboard", "clip", "Clip graphics extending beyond the artboard boundaries.");
         registerPort("artboard", "background", "Artboard background backdrop fill color.");
         registerPort("artboard", "showFrame", "Display artboard boundary outline and title label in editor.");
+
+        register("round_corners", "Round or style sharp corners of shapes, polygons, and text outlines with Round, Chamfer, Scoop, Dogbone, or Squircle profiles.", "geometry");
+        registerPort("round_corners", "shape", "Vector shape, polygon, or text geometry to style.");
+        registerPort("round_corners", "radius", "Corner radius size in pixels.");
+        registerPort("round_corners", "type", "Corner profile: round (fillet), chamfer (bevel), scoop (concave), dogbone (CNC relief), or squircle (G2 curvature).");
+        registerPort("round_corners", "threshold", "Maximum interior angle cutoff in degrees (prevents rounding smooth curves).");
+        registerPort("round_corners", "clamp", "Clamp radius to prevent adjacent corner overlap on short edges.");
+
+        register("duplicator", "Cavalry-style procedural duplicator and cloner with linear, grid, radial, spiral, and path distributions plus step transforms and jitter.", "geometry");
+        registerPort("duplicator", "shape", "Input shape or geometry to clone.");
+        registerPort("duplicator", "mode", "Distribution mode: linear, grid, radial, spiral, or along_path.");
+        registerPort("duplicator", "count", "Number of clones (for linear, radial, spiral, and path modes).");
+        registerPort("duplicator", "spacing", "Distance between clones along a line.");
+        registerPort("duplicator", "angle", "Linear clone orientation angle.");
+        registerPort("duplicator", "columns", "Grid column count.");
+        registerPort("duplicator", "rows", "Grid row count.");
+        registerPort("duplicator", "spacingX", "Grid horizontal spacing.");
+        registerPort("duplicator", "spacingY", "Grid vertical spacing.");
+        registerPort("duplicator", "stagger", "Horizontal offset for alternate rows (0.5 for brick/hex pattern).");
+        registerPort("duplicator", "radius", "Circle radius for radial cloning.");
+        registerPort("duplicator", "startAngle", "Start angle on circle in degrees.");
+        registerPort("duplicator", "endAngle", "End angle on circle in degrees.");
+        registerPort("duplicator", "orient", "Rotate clones to align with path or circle tangent.");
+        registerPort("duplicator", "growthRate", "Spiral expansion growth rate.");
+        registerPort("duplicator", "angleStep", "Angle step between spiral clones (137.5 for golden ratio phyllotaxis).");
+        registerPort("duplicator", "targetPath", "Target path curve for along_path mode.");
+        registerPort("duplicator", "stepRotation", "Cumulative incremental rotation per clone in degrees.");
+        registerPort("duplicator", "stepScale", "Cumulative incremental scaling percentage per clone.");
+        registerPort("duplicator", "stepOpacity", "Opacity fade across clones.");
+        registerPort("duplicator", "jitterPos", "Random position displacement magnitude.");
+        registerPort("duplicator", "jitterRot", "Random rotation variation angle.");
+        registerPort("duplicator", "jitterScale", "Random scale variation percentage.");
+        registerPort("duplicator", "seed", "Random variation seed.");
     }
 
     private static void register(String nodeName, String desc, String outType) {

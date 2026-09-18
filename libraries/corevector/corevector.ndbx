@@ -550,5 +550,50 @@
             <port name="background" label="Background Color" range="value" type="color" value="#ffffffff" widget="color" description="Artboard backdrop fill color."/>
             <port name="showFrame" label="Show Frame &amp; Label" range="value" type="boolean" value="true" widget="toggle" description="Display border and name title in viewport."/>
         </node>
+        <node description="Round or style sharp corners of shapes, polygons, and text outlines." function="corevector/roundCorners" image="resample.png" name="round_corners" outputType="geometry" position="10.00,19.00" prototype="generator">
+            <port name="shape" range="value" type="geometry" widget="none" description="Vector shape or text geometry."/>
+            <port min="0.0" max="500.0" name="radius" label="Radius" range="value" type="float" value="10.0" widget="float" description="Corner radius in pixels."/>
+            <port name="type" label="Corner Type" range="value" type="string" value="round" widget="menu" description="Corner profile geometry.">
+                <menu key="round" label="Round (Fillet)"/>
+                <menu key="chamfer" label="Chamfer (Bevel)"/>
+                <menu key="scoop" label="Scoop (Concave)"/>
+                <menu key="dogbone" label="Dogbone (CNC Relief)"/>
+                <menu key="squircle" label="Squircle (G2 Curvature)"/>
+            </port>
+            <port min="0.0" max="180.0" name="threshold" label="Angle Threshold" range="value" type="float" value="175.0" widget="float" description="Maximum interior corner angle to round."/>
+            <port name="clamp" label="Clamp Overlap" range="value" type="boolean" value="true" widget="toggle" description="Prevent corners from overlapping adjacent edges."/>
+        </node>
+        <node description="Cavalry-style procedural duplicator and cloner with step transforms and jitter." function="corevector/duplicator" image="copy.png" name="duplicator" outputRange="list" outputType="geometry" position="10.00,20.00" prototype="generator">
+            <port name="shape" range="value" type="geometry" widget="none" description="Shape to duplicate."/>
+            <port name="mode" label="Distribution" range="value" type="string" value="linear" widget="menu" description="Clone distribution pattern.">
+                <menu key="linear" label="Linear"/>
+                <menu key="grid" label="Grid (Matrix)"/>
+                <menu key="radial" label="Radial (Circle)"/>
+                <menu key="spiral" label="Spiral (Phyllotaxis)"/>
+                <menu key="along_path" label="Along Path"/>
+            </port>
+            <port min="1.0" max="1000.0" name="count" label="Count" range="value" type="int" value="5" widget="int" description="Number of copies (linear, radial, spiral, along_path)."/>
+            <port min="0.0" name="spacing" label="Spacing" range="value" type="float" value="50.0" widget="float" description="Linear clone distance."/>
+            <port name="angle" label="Angle" range="value" type="float" value="0.0" widget="float" description="Linear clone direction in degrees."/>
+            <port min="1.0" max="100.0" name="columns" label="Columns" range="value" type="int" value="3" widget="int" description="Grid column count."/>
+            <port min="1.0" max="100.0" name="rows" label="Rows" range="value" type="int" value="3" widget="int" description="Grid row count."/>
+            <port min="0.0" name="spacingX" label="Spacing X" range="value" type="float" value="60.0" widget="float" description="Grid horizontal spacing."/>
+            <port min="0.0" name="spacingY" label="Spacing Y" range="value" type="float" value="60.0" widget="float" description="Grid vertical spacing."/>
+            <port min="0.0" max="1.0" name="stagger" label="Row Stagger" range="value" type="float" value="0.0" widget="float" description="Horizontal offset for alternate rows (0.5 for brick pattern)."/>
+            <port min="0.0" name="radius" label="Radius" range="value" type="float" value="120.0" widget="float" description="Radial circle radius."/>
+            <port name="startAngle" label="Start Angle" range="value" type="float" value="0.0" widget="float" description="Radial starting angle."/>
+            <port name="endAngle" label="End Angle" range="value" type="float" value="360.0" widget="float" description="Radial ending angle."/>
+            <port name="orient" label="Orient to Path" range="value" type="boolean" value="true" widget="toggle" description="Rotate clones to align with trajectory tangent."/>
+            <port min="0.1" name="growthRate" label="Growth Rate" range="value" type="float" value="3.0" widget="float" description="Spiral outward expansion rate."/>
+            <port name="angleStep" label="Angle Step" range="value" type="float" value="137.5" widget="float" description="Spiral angle step (137.5 for golden ratio / phyllotaxis)."/>
+            <port name="targetPath" range="value" type="geometry" widget="none" description="Guide path curve for along_path mode."/>
+            <port name="stepRotation" label="Step Rotation" range="value" type="float" value="0.0" widget="float" description="Cumulative rotation per clone in degrees."/>
+            <port name="stepScale" label="Step Scale %" range="value" type="float" value="0.0" widget="float" description="Cumulative scaling percentage per clone."/>
+            <port min="0.0" max="1.0" name="stepOpacity" label="End Opacity" range="value" type="float" value="1.0" widget="float" description="Fade opacity across clones (1.0 = no fade)."/>
+            <port min="0.0" name="jitterPos" label="Jitter Position" range="value" type="float" value="0.0" widget="float" description="Random displacement magnitude."/>
+            <port min="0.0" name="jitterRot" label="Jitter Rotation" range="value" type="float" value="0.0" widget="float" description="Random rotation variation."/>
+            <port min="0.0" max="100.0" name="jitterScale" label="Jitter Scale %" range="value" type="float" value="0.0" widget="float" description="Random scale variation percentage."/>
+            <port name="seed" label="Random Seed" range="value" type="int" value="1" widget="int" description="Random variation seed."/>
+        </node>
     </node>
 </ndbx>
