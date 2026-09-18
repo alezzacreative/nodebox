@@ -96,6 +96,8 @@ public class NetworkView extends ZoomableView implements PaneView, Zoom {
     private Map<String, Long> executionTimes = new HashMap<String, Long>();
     private Rectangle miniMapBounds = new Rectangle();
     private boolean showMiniMap = true;
+    private Node errorNode = null;
+    private String errorNodeMessage = null;
 
     static {
         try {
@@ -204,9 +206,51 @@ public class NetworkView extends ZoomableView implements PaneView, Zoom {
         Point2D pt = inverseViewTransformPoint(e.getPoint());
         Node node = getNodeAt(pt);
         if (node != null) {
+            if (isErrorNode(node)) {
+                return getErrorHtmlTooltip(node);
+            }
             return NodeDocumentation.getHtmlTooltip(node);
         }
         return null;
+    }
+
+    private String getErrorHtmlTooltip(Node node) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("<html><body style='width: 340px; font-family: sans-serif; font-size: 11px; padding: 6px;'>");
+        sb.append("<div style='margin-bottom: 6px;'>");
+        sb.append("<b style='color: #EF4444; font-size: 12px;'>&#9888; Node Execution Error</b>");
+        sb.append("<br/><span style='color: #94A3B8;'>Node: </span><b style='color: #38BDF8;'>").append(node.getName()).append("</b>");
+        sb.append("</div>");
+
+        if (errorNodeMessage != null && !errorNodeMessage.trim().isEmpty()) {
+            sb.append("<div style='background-color: #1E293B; color: #F8FAFC; padding: 6px 8px; border-radius: 4px; font-family: monospace; font-size: 11px; margin-bottom: 6px;'>");
+            sb.append(escapeHtml(errorNodeMessage));
+            sb.append("</div>");
+        }
+
+        String fix = NetworkPane.getSuggestedFix(errorNodeMessage);
+        if (fix != null) {
+            sb.append("<div style='margin-bottom: 6px;'>");
+            sb.append("<b style='color: #F59E0B;'>&#128161; Suggested Fix:</b><br/>");
+            sb.append("<span style='color: #E2E8F0;'>").append(fix).append("</span>");
+            sb.append("</div>");
+        }
+
+        String doc = NodeDocumentation.getHtmlTooltip(node);
+        if (doc != null && !doc.isEmpty()) {
+            sb.append("<div style='border-top: 1px solid #475569; padding-top: 6px; margin-top: 6px;'>");
+            String innerDoc = doc.replaceAll("(?i)</?html>|</?body[^>]*>", "");
+            sb.append(innerDoc);
+            sb.append("</div>");
+        }
+
+        sb.append("</body></html>");
+        return sb.toString();
+    }
+
+    private static String escapeHtml(String text) {
+        if (text == null) return "";
+        return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;");
     }
 
     private void initMenus() {
@@ -338,8 +382,53 @@ public class NetworkView extends ZoomableView implements PaneView, Zoom {
         updateConnections();
     }
 
+    public void setErrorNode(Node node, String message) {
+        this.errorNode = node;
+        this.errorNodeMessage = message;
+        repaint();
+    }
+
+    public void clearErrorNode() {
+        this.errorNode = null;
+        this.errorNodeMessage = null;
+        repaint();
+    }
+
+    public Node getErrorNode() {
+        return errorNode;
+    }
+
+    public String getErrorNodeMessage() {
+        return errorNodeMessage;
+    }
+
+    public boolean isErrorNode(Node node) {
+        if (node == null || errorNode == null) return false;
+        return node == errorNode || (node.getName() != null && node.getName().equals(errorNode.getName()));
+    }
+
+    public void focusNode(Node node) {
+        if (node == null) return;
+        Rectangle r = nodeRect(node);
+        double scale = getViewScale();
+        double viewW = getWidth();
+        double viewH = getHeight();
+        if (viewW > 0 && viewH > 0) {
+            double vx = (viewW / 2.0) - (r.getCenterX() * scale);
+            double vy = (viewH / 2.0) - (r.getCenterY() * scale);
+            setViewTransform(vx, vy, scale);
+        }
+        try {
+            if (document != null && document.getActiveNetwork() != null && document.getActiveNetwork().hasChild(node.getName())) {
+                document.setActiveNode(node);
+            }
+        } catch (Exception ignored) {
+        }
+        repaint();
+    }
+
     public void checkErrorAndRepaint() {
-        // TODO Check for errors in an efficient way.
+        repaint();
     }
 
     public void codeChanged(Node node, boolean changed) {
@@ -458,7 +547,9 @@ public class NetworkView extends ZoomableView implements PaneView, Zoom {
             int dotW = Math.max(3, (int) Math.round(NODE_WIDTH * scale));
             int dotH = Math.max(2, (int) Math.round(NODE_HEIGHT * scale));
 
-            if (isSelected(n)) {
+            if (isErrorNode(n)) {
+                g.setColor(new Color(239, 68, 68)); // Red highlight for error node
+            } else if (isSelected(n)) {
                 g.setColor(new Color(249, 115, 22)); // Orange highlight
             } else if (n == renderedNode) {
                 g.setColor(new Color(34, 197, 94)); // Green highlight
@@ -672,15 +763,24 @@ public class NetworkView extends ZoomableView implements PaneView, Zoom {
         double luminance = (0.299 * nodeColor.getRed() + 0.587 * nodeColor.getGreen() + 0.114 * nodeColor.getBlue());
         boolean lightNode = luminance > 130;
 
-        // Draw selection ring
-        if (selected) {
+        boolean isError = isErrorNode(node);
+
+        // Draw error outline / glow or selection ring
+        if (isError) {
+            g.setColor(new Color(239, 68, 68, 80));
+            g.fillRoundRect(r.x - 4, r.y - 4, NODE_WIDTH + 8, NODE_HEIGHT + 8, 8, 8);
+            g.setColor(new Color(239, 68, 68));
+            g.setStroke(new BasicStroke(selected ? 3.5f : 2.5f));
+            g.drawRoundRect(r.x - 2, r.y - 2, NODE_WIDTH + 3, NODE_HEIGHT + 3, 6, 6);
+        } else if (selected) {
+            // Draw selection ring
             g.setColor(Theme.isDark() ? new Color(56, 189, 248) : Color.WHITE);
             g.fillRect(r.x, r.y, NODE_WIDTH, NODE_HEIGHT);
         }
 
         // Draw node
         g.setColor(nodeColor);
-        if (selected) {
+        if (isError || selected) {
             g.fillRect(r.x + 2, r.y + 2, NODE_WIDTH - 4, NODE_HEIGHT - 4);
         } else {
             g.fillRect(r.x, r.y, NODE_WIDTH, NODE_HEIGHT);
@@ -752,6 +852,22 @@ public class NetworkView extends ZoomableView implements PaneView, Zoom {
         if (node.hasComment()) {
             BufferedImage drawComment = lightNode ? getInvertedImage(commentIcon) : commentIcon;
             g.drawImage(drawComment, r.x + NODE_WIDTH - 13, r.y + 5, null);
+        }
+
+        // Draw error alert badge (!)
+        if (isError) {
+            int badgeSize = 16;
+            int badgeX = r.x + NODE_WIDTH - badgeSize + 3;
+            int badgeY = r.y - 6;
+            g.setColor(new Color(239, 68, 68));
+            g.fillOval(badgeX, badgeY, badgeSize, badgeSize);
+            g.setColor(Color.WHITE);
+            g.setStroke(new BasicStroke(1.5f));
+            g.drawOval(badgeX, badgeY, badgeSize, badgeSize);
+            g.setFont(new Font(Font.DIALOG, Font.BOLD, 11));
+            FontMetrics bfm = g.getFontMetrics();
+            int exW = bfm.stringWidth("!");
+            g.drawString("!", badgeX + (badgeSize - exW) / 2, badgeY + badgeSize - 4);
         }
 
         // Draw profiler badge if enabled

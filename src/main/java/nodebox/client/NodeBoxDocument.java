@@ -90,7 +90,7 @@ public class NodeBoxDocument extends JFrame implements WindowListener, HandleDel
     private String lastEditType = null;
     private String lastEditObjectId = null;
     private FunctionRepository functionRepository;
-    private String activeNetworkPath = "";
+    private String activeNetworkPath = "/";
     private String activeNodeName = "";
     private boolean restoring = false;
     private boolean invalidateFunctionRepository = false;
@@ -288,7 +288,10 @@ public class NodeBoxDocument extends JFrame implements WindowListener, HandleDel
     }
 
     public NodeRepository getNodeRepository() {
-        return Application.getInstance().getSystemRepository();
+        if (Application.getInstance() != null) {
+            return Application.getInstance().getSystemRepository();
+        }
+        return NodeRepository.of();
     }
 
     public FunctionRepository getFunctionRepository() {
