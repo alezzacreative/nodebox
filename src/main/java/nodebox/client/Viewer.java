@@ -13,6 +13,8 @@ import nodebox.util.PerfMonitor;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
+import java.awt.image.VolatileImage;
+import nodebox.util.GPUUtils;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
@@ -43,6 +45,8 @@ public class Viewer extends ZoomableView implements OutputView, Zoom, MouseListe
     private String modalNodePath = null;
     private final Map<String, Object> modalInitialValues = new HashMap<String, Object>();
     private double modalHudDeltaX = 0, modalHudDeltaY = 0, modalHudAngle = 0, modalHudScale = 1.0;
+
+    private boolean gpuAcceleration = Application.isGpuAccelerationEnabled();
 
     public static final String FRAME_GUIDE_OFF = "Off";
     public static final String FRAME_GUIDE_1_1 = "1:1";
@@ -171,6 +175,7 @@ public class Viewer extends ZoomableView implements OutputView, Zoom, MouseListe
 
     @Override
     protected void onViewTransformChanged(double viewX, double viewY, double viewScale) {
+        super.onViewTransformChanged(viewX, viewY, viewScale);
         // Keep the handle's transform current so hit-testing is correct immediately after a
         // zoom or pan, before the next repaint. Drawing also refreshes it in paintHandle.
         if (handle != null)
@@ -219,6 +224,20 @@ public class Viewer extends ZoomableView implements OutputView, Zoom, MouseListe
     public void setCanvasBounds(Rectangle2D bounds) {
         this.canvasBounds = bounds;
         repaint();
+    }
+
+    public void setGpuAcceleration(boolean enabled) {
+        this.gpuAcceleration = enabled;
+        repaint();
+    }
+
+    public boolean isGpuAcceleration() {
+        return gpuAcceleration;
+    }
+
+    @Override
+    public void setViewPosition(double x, double y) {
+        super.setViewPosition(x, y);
     }
 
     @Override
@@ -591,12 +610,26 @@ public class Viewer extends ZoomableView implements OutputView, Zoom, MouseListe
             viewPositioned = true;
         }
         Graphics2D g2 = (Graphics2D) g;
-        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-        g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
 
-        // Draw background
-        g2.setColor(getBackground());
-        g2.fill(g.getClipBounds());
+        if (gpuAcceleration) {
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_LCD_HRGB);
+            g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+            g2.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+            g2.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE);
+        } else {
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF);
+            g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_OFF);
+            g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
+            g2.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_SPEED);
+            g2.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_DEFAULT);
+        }
+
+        // Always fill the entire viewport with the active theme background color
+        Color bgColor = Theme.VIEWER_BACKGROUND_COLOR != null ? Theme.VIEWER_BACKGROUND_COLOR : getBackground();
+        setBackground(bgColor);
+        g2.setColor(bgColor);
+        g2.fillRect(0, 0, getWidth(), getHeight());
 
         // Set the view transform
         AffineTransform originalTransform = g2.getTransform();

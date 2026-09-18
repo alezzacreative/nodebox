@@ -15,6 +15,8 @@ public class PreferencePanel extends JDialog implements ActionListener {
     private final Preferences preferences;
     private JComboBox<String> themeComboBox;
     private JComboBox<String> cableStyleComboBox;
+    private JCheckBox enableGpuAccelerationCheck;
+    private JLabel gpuStatusLabel;
     private JCheckBox enableDeviceSupportCheck;
 
     public PreferencePanel(Application application, Window owner) {
@@ -52,6 +54,31 @@ public class PreferencePanel extends JDialog implements ActionListener {
 
         contentPanel.add(Box.createVerticalStrut(15));
 
+        JLabel rendering = new JLabel("Rendering & Performance");
+        rendering.setFont(new Font(Font.DIALOG, Font.BOLD, 13));
+        rendering.setMinimumSize(new Dimension(300, 20));
+        rendering.setBorder(BorderFactory.createEmptyBorder(0, 0, 5, 0));
+        contentPanel.add(rendering);
+
+        JPanel gpuPanel = new JPanel();
+        gpuPanel.setLayout(new BoxLayout(gpuPanel, BoxLayout.Y_AXIS));
+        gpuPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        enableGpuAccelerationCheck = new JCheckBox("Enable GPU Hardware Acceleration");
+        enableGpuAccelerationCheck.setFont(new Font(Font.DIALOG, Font.PLAIN, 12));
+        enableGpuAccelerationCheck.setAlignmentX(Component.LEFT_ALIGNMENT);
+        enableGpuAccelerationCheck.setToolTipText("Accelerates viewport rendering and canvas panning/zooming using GPU VRAM.");
+
+        gpuStatusLabel = new JLabel("Pipeline: " + nodebox.util.GPUUtils.getPipelineDescription());
+        gpuStatusLabel.setFont(new Font(Font.DIALOG, Font.PLAIN, 11));
+        gpuStatusLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        gpuStatusLabel.setBorder(BorderFactory.createEmptyBorder(2, 22, 0, 0));
+
+        gpuPanel.add(enableGpuAccelerationCheck);
+        gpuPanel.add(gpuStatusLabel);
+        contentPanel.add(gpuPanel);
+
+        contentPanel.add(Box.createVerticalStrut(15));
+
         JLabel experimental = new JLabel("Experimental Features");
         experimental.setFont(new Font(Font.DIALOG, Font.BOLD, 13));
         experimental.setMinimumSize(new Dimension(300, 20));
@@ -82,11 +109,16 @@ public class PreferencePanel extends JDialog implements ActionListener {
         contentPanel.setBackground(dialogBg);
         themePanel.setBackground(dialogBg);
         cablePanel.setBackground(dialogBg);
+        gpuPanel.setBackground(dialogBg);
         buttonPanel.setBackground(dialogBg);
         appearance.setForeground(Theme.TEXT_NORMAL_COLOR);
+        rendering.setForeground(Theme.TEXT_NORMAL_COLOR);
         experimental.setForeground(Theme.TEXT_NORMAL_COLOR);
         themeLabel.setForeground(Theme.TEXT_NORMAL_COLOR);
         cableLabel.setForeground(Theme.TEXT_NORMAL_COLOR);
+        enableGpuAccelerationCheck.setBackground(dialogBg);
+        enableGpuAccelerationCheck.setForeground(Theme.TEXT_NORMAL_COLOR);
+        gpuStatusLabel.setForeground(Theme.TEXT_DISABLED_COLOR);
         enableDeviceSupportCheck.setBackground(dialogBg);
         enableDeviceSupportCheck.setForeground(Theme.TEXT_NORMAL_COLOR);
         themeComboBox.setUI(new nodebox.ui.ThemeComboBoxUI());
@@ -99,7 +131,7 @@ public class PreferencePanel extends JDialog implements ActionListener {
         readPreferences();
 
         setContentPane(rootPanel);
-        setMinimumSize(new Dimension(300, 160));
+        setMinimumSize(new Dimension(340, 220));
         setResizable(false);
         pack();
     }
@@ -129,6 +161,8 @@ public class PreferencePanel extends JDialog implements ActionListener {
         } else {
             cableStyleComboBox.setSelectedItem("Curved");
         }
+        boolean gpu = preferences.getBoolean(Application.PREFERENCE_GPU_ACCELERATION, Application.DEFAULT_GPU_ACCELERATION);
+        enableGpuAccelerationCheck.setSelected(gpu);
     }
 
     public void actionPerformed(ActionEvent actionEvent) {
@@ -153,6 +187,14 @@ public class PreferencePanel extends JDialog implements ActionListener {
             selectedCableStyle = Application.CABLE_STYLE_ORTHOGONAL;
         }
         application.setCableStyle(selectedCableStyle);
+
+        boolean currentGpu = preferences.getBoolean(Application.PREFERENCE_GPU_ACCELERATION, Application.DEFAULT_GPU_ACCELERATION);
+        boolean selectedGpu = enableGpuAccelerationCheck.isSelected();
+        if (currentGpu != selectedGpu) {
+            preferences.putBoolean(Application.PREFERENCE_GPU_ACCELERATION, selectedGpu);
+            application.setGpuAccelerationEnabled(selectedGpu);
+            restartNeeded = true;
+        }
 
         if (restartNeeded) {
             JOptionPane.showMessageDialog(this, "Please restart NodeBox for the changes to take effect.");

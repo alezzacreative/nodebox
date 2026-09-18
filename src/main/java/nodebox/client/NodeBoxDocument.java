@@ -1259,7 +1259,7 @@ public class NodeBoxDocument extends JFrame implements WindowListener, HandleDel
         }
     }
 
-    private Viewer getViewer() {
+    public Viewer getViewer() {
         if (fullScreenFrame != null)
             return fullScreenFrame.getViewer();
         else
@@ -1766,7 +1766,7 @@ public class NodeBoxDocument extends JFrame implements WindowListener, HandleDel
                 "PNG");
         if (chosenFormat == null) return false;
 
-        ExportFormat exportFormat = ExportFormat.valueOf(chosenFormat);
+        ExportFormat exportFormat = ExportFormat.of(chosenFormat);
         int count = 0;
         for (nodebox.graphics.Artboard artboard : artboards) {
             String safeName = artboard.getName().replaceAll("[^a-zA-Z0-9._-]", "_");

@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<ndbx formatVersion="22" type="file" uuid="a1b2c3d4-e5f6-7890-abcd-ef1234567805">
+    <property name="canvasHeight" value="842"/>
+    <property name="canvasWidth" value="595"/>
+    <node name="root" prototype="core.network" renderedChild="combine_all">
+        <node name="tiling" position="1.00,1.00" prototype="corevector.truchet_tiles">
+            <port name="position" type="point" value="0.00,30.00"/>
+            <port name="width" type="float" value="480.0"/>
+            <port name="height" type="float" value="560.0"/>
+            <port name="tileSize" type="float" value="48.0"/>
+            <port name="tileType" type="string" value="arcs"/>
+            <port name="lineWidth" type="float" value="3.0"/>
+            <port name="seed" type="int" value="42"/>
+        </node>
+        <node name="styled_tiling" position="1.00,3.00" prototype="corevector.stroke_style">
+            <port name="cap" type="string" value="round"/>
+            <port name="join" type="string" value="round"/>
+        </node>
+        <node name="color_tiling" position="1.00,5.00" prototype="corevector.colorize">
+            <port name="stroke" type="color" value="#f43f5eff"/>
+            <port name="strokeWidth" type="float" value="3.0"/>
+        </node>
+        <node name="title" position="5.00,1.00" prototype="corevector.fit_text">
+            <port name="text" type="string" value="TRUCHET ARCS"/>
+            <port name="fontName" type="string" value="Helvetica"/>
+            <port name="position" type="point" value="0.00,-330.00"/>
+            <port name="width" type="float" value="480.0"/>
+            <port name="height" type="float" value="60.0"/>
+            <port name="alignment" type="string" value="CENTER"/>
+        </node>
+        <node name="color_title" position="5.00,3.00" prototype="corevector.colorize">
+            <port name="fill" type="color" value="#0f172aff"/>
+        </node>
+        <node name="footer" position="5.00,5.00" prototype="corevector.typeset">
+            <port name="text" type="string" value="SYSTEMATISCHE FORMGEBUNG • PROCEDURAL QUARTER-CIRCLE SMITH TILING • SWISS GRAPHIC DESIGN"/>
+            <port name="fontName" type="string" value="Helvetica"/>
+            <port name="fontSize" type="float" value="9.0"/>
+            <port name="alignment" type="string" value="CENTER"/>
+            <port name="position" type="point" value="-240.00,360.00"/>
+            <port name="width" type="float" value="480.0"/>
+        </node>
+        <node name="color_footer" position="5.00,7.00" prototype="corevector.colorize">
+            <port name="fill" type="color" value="#64748bff"/>
+        </node>
+        <node name="combine_all" position="3.00,9.00" prototype="list.combine"/>
+        <conn input="styled_tiling.shape" output="tiling"/>
+        <conn input="color_tiling.shape" output="styled_tiling"/>
+        <conn input="color_title.shape" output="title"/>
+        <conn input="color_footer.shape" output="footer"/>
+        <conn input="combine_all.list1" output="color_tiling"/>
+        <conn input="combine_all.list2" output="color_title"/>
+        <conn input="combine_all.list3" output="color_footer"/>
+    </node>
+</ndbx>

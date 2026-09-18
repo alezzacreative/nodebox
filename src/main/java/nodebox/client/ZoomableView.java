@@ -56,7 +56,10 @@ public class ZoomableView extends JComponent {
         SwingUtilities.invokeLater(new Runnable() {
             @Override
             public void run() {
-                SwingUtilities.getWindowAncestor(ZoomableView.this).addWindowFocusListener(fh);
+                Window window = SwingUtilities.getWindowAncestor(ZoomableView.this);
+                if (window != null) {
+                    window.addWindowFocusListener(fh);
+                }
             }
         });
     }

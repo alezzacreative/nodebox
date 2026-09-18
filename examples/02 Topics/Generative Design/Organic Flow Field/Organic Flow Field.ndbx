@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<ndbx formatVersion="22" type="file" uuid="a1b2c3d4-e5f6-7890-abcd-ef1234567807">
+    <property name="canvasHeight" value="800"/>
+    <property name="canvasWidth" value="800"/>
+    <node name="root" prototype="core.network" renderedChild="combine_all">
+        <node name="grid1" position="1.00,1.00" prototype="corevector.grid">
+            <port name="columns" type="int" value="18"/>
+            <port name="rows" type="int" value="18"/>
+            <port name="width" type="float" value="560.0"/>
+            <port name="height" type="float" value="560.0"/>
+            <port name="position" type="point" value="0.00,20.00"/>
+        </node>
+        <node name="flow" position="1.00,3.00" prototype="corevector.flow_field">
+            <port name="steps" type="int" value="70"/>
+            <port name="stepLength" type="float" value="7.0"/>
+            <port name="noiseScale" type="float" value="0.004"/>
+            <port name="angleStrength" type="float" value="6.2831853"/>
+            <port name="seed" type="int" value="12"/>
+        </node>
+        <node name="smooth1" position="1.00,5.00" prototype="corevector.smooth">
+            <port name="iterations" type="int" value="3"/>
+            <port name="ratio" type="float" value="0.25"/>
+        </node>
+        <node name="color_flow" position="1.00,7.00" prototype="corevector.colorize">
+            <port name="stroke" type="color" value="#06b6d4ee"/>
+            <port name="strokeWidth" type="float" value="1.2"/>
+        </node>
+        <node name="title" position="5.00,3.00" prototype="corevector.fit_text">
+            <port name="text" type="string" value="ORGANIC VECTOR FLOW FIELD"/>
+            <port name="fontName" type="string" value="Helvetica"/>
+            <port name="position" type="point" value="0.00,-330.00"/>
+            <port name="width" type="float" value="520.0"/>
+            <port name="height" type="float" value="35.0"/>
+            <port name="alignment" type="string" value="CENTER"/>
+        </node>
+        <node name="color_title" position="5.00,5.00" prototype="corevector.colorize">
+            <port name="fill" type="color" value="#0891b2ff"/>
+        </node>
+        <node name="combine_all" position="3.00,9.00" prototype="list.combine"/>
+        <conn input="flow.seedPoints" output="grid1"/>
+        <conn input="smooth1.shape" output="flow"/>
+        <conn input="color_flow.shape" output="smooth1"/>
+        <conn input="color_title.shape" output="title"/>
+        <conn input="combine_all.list1" output="color_flow"/>
+        <conn input="combine_all.list2" output="color_title"/>
+    </node>
+</ndbx>

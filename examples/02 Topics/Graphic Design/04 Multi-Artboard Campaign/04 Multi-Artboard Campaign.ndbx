@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<ndbx formatVersion="22" type="file" uuid="a1b2c3d4-e5f6-7890-abcd-ef1234567804">
+    <property name="canvasHeight" value="2200"/>
+    <property name="canvasWidth" value="4200"/>
+    <node name="root" prototype="core.network" renderedChild="all_artboards">
+        <node name="rosette" position="1.00,1.00" prototype="corevector.guilloche">
+            <port name="majorRadius" type="float" value="160.0"/>
+            <port name="minorRadius" type="float" value="55.0"/>
+            <port name="offset" type="float" value="80.0"/>
+            <port name="steps" type="float" value="3000.0"/>
+            <port name="revolutions" type="float" value="11.0"/>
+            <port name="modulationAmp" type="float" value="6.0"/>
+            <port name="modulationFreq" type="float" value="5.0"/>
+        </node>
+        <node name="color_rosette" position="1.00,3.00" prototype="corevector.colorize">
+            <port name="stroke" type="color" value="#38bdf8ff"/>
+            <port name="strokeWidth" type="float" value="1.5"/>
+        </node>
+        <node name="headline" position="4.00,1.00" prototype="corevector.fit_text">
+            <port name="text" type="string" value="NEO DESIGN 2026"/>
+            <port name="fontName" type="string" value="Helvetica"/>
+            <port name="position" type="point" value="0.00,-280.00"/>
+            <port name="width" type="float" value="480.0"/>
+            <port name="height" type="float" value="70.0"/>
+            <port name="alignment" type="string" value="CENTER"/>
+        </node>
+        <node name="color_headline" position="4.00,3.00" prototype="corevector.colorize">
+            <port name="fill" type="color" value="#f8fafcff"/>
+        </node>
+        <node name="body" position="7.00,1.00" prototype="corevector.typeset">
+            <port name="text" type="string" value="Future of Generative Vector Systems &amp; Computational Typography.&#10;International Annual Design Conference • October 14-16, 2026.&#10;Keynotes • Workstations • Kinetic Exhibitions."/>
+            <port name="fontName" type="string" value="Helvetica"/>
+            <port name="fontSize" type="float" value="14.0"/>
+            <port name="alignment" type="string" value="CENTER"/>
+            <port name="position" type="point" value="-240.00,260.00"/>
+            <port name="width" type="float" value="480.0"/>
+            <port name="lineHeight" type="float" value="1.6"/>
+        </node>
+        <node name="color_body" position="7.00,3.00" prototype="corevector.colorize">
+            <port name="fill" type="color" value="#94a3b8ff"/>
+        </node>
+        <node name="campaign_artwork" position="3.00,5.00" prototype="list.combine"/>
+        <node name="artboard_story" position="1.00,7.00" prototype="corevector.artboard">
+            <port name="name" type="string" value="Festival_Story"/>
+            <port name="preset" type="string" value="instagram_story"/>
+            <port name="position" type="point" value="-1400.00,0.00"/>
+            <port name="background" type="color" value="#090d16ff"/>
+            <port name="clip" type="boolean" value="true"/>
+            <port name="showFrame" type="boolean" value="true"/>
+        </node>
+        <node name="artboard_post" position="5.00,7.00" prototype="corevector.artboard">
+            <port name="name" type="string" value="Festival_Feed_Post"/>
+            <port name="preset" type="string" value="instagram_post"/>
+            <port name="position" type="point" value="0.00,0.00"/>
+            <port name="background" type="color" value="#0f172aff"/>
+            <port name="clip" type="boolean" value="true"/>
+            <port name="showFrame" type="boolean" value="true"/>
+        </node>
+        <node name="artboard_badge" position="9.00,7.00" prototype="corevector.artboard">
+            <port name="name" type="string" value="Festival_VIP_Badge"/>
+            <port name="preset" type="string" value="business_card"/>
+            <port name="position" type="point" value="1300.00,0.00"/>
+            <port name="background" type="color" value="#18181bff"/>
+            <port name="clip" type="boolean" value="true"/>
+            <port name="showFrame" type="boolean" value="true"/>
+        </node>
+        <node name="all_artboards" position="5.00,9.00" prototype="list.combine"/>
+        <conn input="color_rosette.shape" output="rosette"/>
+        <conn input="color_headline.shape" output="headline"/>
+        <conn input="color_body.shape" output="body"/>
+        <conn input="campaign_artwork.list1" output="color_rosette"/>
+        <conn input="campaign_artwork.list2" output="color_headline"/>
+        <conn input="campaign_artwork.list3" output="color_body"/>
+        <conn input="artboard_story.shape" output="campaign_artwork"/>
+        <conn input="artboard_post.shape" output="campaign_artwork"/>
+        <conn input="artboard_badge.shape" output="campaign_artwork"/>
+        <conn input="all_artboards.list1" output="artboard_story"/>
+        <conn input="all_artboards.list2" output="artboard_post"/>
+        <conn input="all_artboards.list3" output="artboard_badge"/>
+    </node>
+</ndbx>

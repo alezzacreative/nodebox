@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<ndbx formatVersion="22" type="file" uuid="a1b2c3d4-e5f6-7890-abcd-ef1234567806">
+    <property name="canvasHeight" value="700"/>
+    <property name="canvasWidth" value="900"/>
+    <node name="root" prototype="core.network" renderedChild="combine_all">
+        <node name="title" position="1.00,1.00" prototype="corevector.fit_text">
+            <port name="text" type="string" value="ISOMETRIC"/>
+            <port name="fontName" type="string" value="Helvetica"/>
+            <port name="position" type="point" value="0.00,-40.00"/>
+            <port name="width" type="float" value="680.0"/>
+            <port name="height" type="float" value="130.0"/>
+            <port name="alignment" type="string" value="CENTER"/>
+        </node>
+        <node name="extrude" position="1.00,3.00" prototype="corevector.extrude_3d">
+            <port name="depth" type="float" value="40.0"/>
+            <port name="angle" type="float" value="50.0"/>
+            <port name="frontColor" type="color" value="#6366f1ff"/>
+            <port name="sideColor" type="color" value="#312e81ff"/>
+            <port name="lightIntensity" type="float" value="85.0"/>
+        </node>
+        <node name="shadow" position="1.00,5.00" prototype="corevector.long_shadow">
+            <port name="angle" type="float" value="45.0"/>
+            <port name="distance" type="float" value="60.0"/>
+            <port name="fade" type="float" value="0.3"/>
+        </node>
+        <node name="subtitle" position="5.00,3.00" prototype="corevector.typeset">
+            <port name="text" type="string" value="Axonometric pseudo-3D extrusion with directional facet lighting and geometric projection shadow."/>
+            <port name="fontName" type="string" value="Helvetica"/>
+            <port name="fontSize" type="float" value="13.0"/>
+            <port name="alignment" type="string" value="CENTER"/>
+            <port name="position" type="point" value="-280.00,180.00"/>
+            <port name="width" type="float" value="560.0"/>
+        </node>
+        <node name="color_subtitle" position="5.00,5.00" prototype="corevector.colorize">
+            <port name="fill" type="color" value="#475569ff"/>
+        </node>
+        <node name="combine_all" position="3.00,7.00" prototype="list.combine"/>
+        <conn input="extrude.shape" output="title"/>
+        <conn input="shadow.shape" output="extrude"/>
+        <conn input="color_subtitle.shape" output="subtitle"/>
+        <conn input="combine_all.list1" output="shadow"/>
+        <conn input="combine_all.list2" output="color_subtitle"/>
+    </node>
+</ndbx>

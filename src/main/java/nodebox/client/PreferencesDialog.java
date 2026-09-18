@@ -14,6 +14,8 @@ public class PreferencesDialog extends JDialog {
     private Preferences preferences;
     private JComboBox<String> themeComboBox;
     private JComboBox<String> cableStyleComboBox;
+    private JCheckBox gpuAccelerationCheckBox;
+    private JLabel gpuStatusLabel;
 
     public PreferencesDialog() {
         super((Frame) null, "Preferences");
@@ -45,6 +47,30 @@ public class PreferencesDialog extends JDialog {
 
         rootPanel.add(Box.createVerticalStrut(10));
 
+        JLabel rendering = new JLabel("Rendering & Performance");
+        rendering.setFont(new Font(Font.DIALOG, Font.BOLD, 13));
+        rendering.setAlignmentX(Component.LEFT_ALIGNMENT);
+        rootPanel.add(rendering);
+
+        JPanel gpuPanel = new JPanel();
+        gpuPanel.setLayout(new BoxLayout(gpuPanel, BoxLayout.Y_AXIS));
+        gpuPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        gpuAccelerationCheckBox = new JCheckBox("Enable GPU Hardware Acceleration");
+        gpuAccelerationCheckBox.setFont(new Font(Font.DIALOG, Font.PLAIN, 12));
+        gpuAccelerationCheckBox.setAlignmentX(Component.LEFT_ALIGNMENT);
+        gpuAccelerationCheckBox.setToolTipText("Accelerates viewport rendering and canvas panning/zooming using GPU VRAM.");
+
+        gpuStatusLabel = new JLabel("Pipeline: " + nodebox.util.GPUUtils.getPipelineDescription());
+        gpuStatusLabel.setFont(new Font(Font.DIALOG, Font.PLAIN, 11));
+        gpuStatusLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        gpuStatusLabel.setBorder(BorderFactory.createEmptyBorder(2, 22, 0, 0));
+
+        gpuPanel.add(gpuAccelerationCheckBox);
+        gpuPanel.add(gpuStatusLabel);
+        rootPanel.add(gpuPanel);
+
+        rootPanel.add(Box.createVerticalStrut(10));
+
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.TRAILING, 10, 10));
         JButton cancelButton = new JButton("Cancel");
         cancelButton.addActionListener(new ActionListener() {
@@ -67,10 +93,15 @@ public class PreferencesDialog extends JDialog {
         rootPanel.setBackground(dialogBg);
         themePanel.setBackground(dialogBg);
         cablePanel.setBackground(dialogBg);
+        gpuPanel.setBackground(dialogBg);
         buttonPanel.setBackground(dialogBg);
         appearance.setForeground(Theme.TEXT_NORMAL_COLOR);
+        rendering.setForeground(Theme.TEXT_NORMAL_COLOR);
         themeLabel.setForeground(Theme.TEXT_NORMAL_COLOR);
         cableLabel.setForeground(Theme.TEXT_NORMAL_COLOR);
+        gpuAccelerationCheckBox.setBackground(dialogBg);
+        gpuAccelerationCheckBox.setForeground(Theme.TEXT_NORMAL_COLOR);
+        gpuStatusLabel.setForeground(Theme.TEXT_DISABLED_COLOR);
         themeComboBox.setUI(new nodebox.ui.ThemeComboBoxUI());
         cableStyleComboBox.setUI(new nodebox.ui.ThemeComboBoxUI());
         cancelButton.setUI(new nodebox.ui.ThemeButtonUI());
@@ -99,6 +130,8 @@ public class PreferencesDialog extends JDialog {
         } else {
             cableStyleComboBox.setSelectedItem("Curved");
         }
+        boolean gpu = preferences.getBoolean(Application.PREFERENCE_GPU_ACCELERATION, Application.DEFAULT_GPU_ACCELERATION);
+        gpuAccelerationCheckBox.setSelected(gpu);
     }
 
     public void doCancel() {
@@ -124,6 +157,12 @@ public class PreferencesDialog extends JDialog {
             Application.getInstance().setCableStyle(selectedCableStyle);
         } else {
             preferences.put(Application.PREFERENCE_CABLE_STYLE, selectedCableStyle);
+        }
+
+        boolean selectedGpu = gpuAccelerationCheckBox.isSelected();
+        preferences.putBoolean(Application.PREFERENCE_GPU_ACCELERATION, selectedGpu);
+        if (Application.getInstance() != null) {
+            Application.getInstance().setGpuAccelerationEnabled(selectedGpu);
         }
 
         try {

@@ -56,6 +56,10 @@ public class Application implements Host {
     public static final String CABLE_STYLE_STRAIGHT = "straight";
     public static final String CABLE_STYLE_ORTHOGONAL = "orthogonal";
 
+    public static final String PREFERENCE_GPU_ACCELERATION = "NBGpuAcceleration";
+    public static final boolean DEFAULT_GPU_ACCELERATION = true;
+    public static boolean GPU_ACCELERATION = DEFAULT_GPU_ACCELERATION;
+
     private String cableStyle = CABLE_STYLE_CURVED;
 
     private static Application instance;
@@ -246,6 +250,28 @@ public class Application implements Host {
         String theme = preferences.get(Application.PREFERENCE_THEME, Application.THEME_LIGHT);
         Theme.setTheme(theme);
         cableStyle = preferences.get(Application.PREFERENCE_CABLE_STYLE, CABLE_STYLE_CURVED);
+        GPU_ACCELERATION = Boolean.valueOf(preferences.get(PREFERENCE_GPU_ACCELERATION, Boolean.toString(DEFAULT_GPU_ACCELERATION)));
+        nodebox.util.GPUUtils.applyGpuPipelineProperties(GPU_ACCELERATION);
+    }
+
+    public static boolean isGpuAccelerationEnabled() {
+        return GPU_ACCELERATION;
+    }
+
+    public void setGpuAccelerationEnabled(boolean enabled) {
+        GPU_ACCELERATION = enabled;
+        Preferences preferences = Preferences.userNodeForPackage(Application.class);
+        preferences.put(PREFERENCE_GPU_ACCELERATION, Boolean.toString(enabled));
+        try {
+            preferences.flush();
+        } catch (Exception ignored) {
+        }
+        for (NodeBoxDocument doc : getDocuments()) {
+            if (doc.getViewer() != null) {
+                doc.getViewer().setGpuAcceleration(enabled);
+                doc.getViewer().repaint();
+            }
+        }
     }
 
     public String getCableStyle() {
@@ -560,6 +586,13 @@ public class Application implements Host {
 
     public static void main(String[] args) {
         Log.info("Starting NodeBox");
+        try {
+            Preferences prefs = Preferences.userNodeForPackage(Application.class);
+            boolean gpuEnabled = Boolean.valueOf(prefs.get(PREFERENCE_GPU_ACCELERATION, Boolean.toString(DEFAULT_GPU_ACCELERATION)));
+            GPU_ACCELERATION = gpuEnabled;
+            nodebox.util.GPUUtils.applyGpuPipelineProperties(gpuEnabled);
+        } catch (Throwable ignored) {
+        }
         final Application app = new Application();
         // Ignore OS X's weird launch parameter.
         if (args.length == 1 && !args[0].startsWith("-psn")) {

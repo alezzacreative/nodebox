@@ -1,4 +1,4 @@
-﻿package nodebox.graphics;
+package nodebox.graphics;
 
 import java.awt.geom.Rectangle2D;
 
@@ -81,15 +81,11 @@ public class Artboard extends Geometry {
                 Path clipRect = new Path();
                 clipRect.rect(px, py, w, h);
                 IGeometry clipped = VectorBooleans.combine(shape, clipRect, "intersect");
-                for (Path p : clipped.getPaths()) {
-                    content.add(p);
-                    this.add(p);
-                }
+                addGeometryPaths(content, clipped);
+                addGeometryPaths(this, clipped);
             } else {
-                for (Path p : shape.getPaths()) {
-                    content.add(p);
-                    this.add(p);
-                }
+                addGeometryPaths(content, shape);
+                addGeometryPaths(this, shape);
             }
         }
 
@@ -154,4 +150,16 @@ public class Artboard extends Geometry {
     public Geometry getContentForExport() {
         return content;
     }
+
+    private void addGeometryPaths(Geometry target, IGeometry geo) {
+        if (geo == null) return;
+        if (geo instanceof Path) {
+            target.add((Path) geo);
+        } else if (geo instanceof Geometry) {
+            for (Path p : ((Geometry) geo).getPaths()) {
+                target.add(p);
+            }
+        }
+    }
 }
+

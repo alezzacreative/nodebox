@@ -11,6 +11,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.Assert.*;
+import nodebox.node.NodeLibrary;
+import nodebox.node.NodeRepository;
 
 public class GraphicDesignNodesTest {
 
@@ -232,4 +234,53 @@ public class GraphicDesignNodesTest {
         List<Color> pal = ColorFunctions.extractPalette(tmpFile.getAbsolutePath(), 2, 2);
         assertEquals(2, pal.size());
     }
+
+    @Test
+    public void testArtboard() {
+        Path circle = new Path();
+        circle.ellipse(0, 0, 500, 500);
+
+        Artboard story = CoreVectorFunctions.artboard(circle, "Story Campaign", "instagram_story", 1080.0, 1920.0, new Point(0, 0), true, new Color(0.1, 0.1, 0.1), true);
+        assertNotNull(story);
+        assertEquals("Story Campaign", story.getName());
+        assertEquals(1080.0, story.getWidth(), 0.001);
+        assertEquals(1920.0, story.getHeight(), 0.001);
+        assertNotNull(story.getExportBounds());
+        assertEquals(1080.0, story.getExportBounds().getWidth(), 0.001);
+        assertEquals(1920.0, story.getExportBounds().getHeight(), 0.001);
+        assertFalse(story.getContentForExport().getPaths().isEmpty());
+
+        // Business Card preset
+        Artboard card = CoreVectorFunctions.artboard(circle, "Card", "business_card", 0.0, 0.0, new Point(1200, 0), false, Color.WHITE, false);
+        assertEquals(1050.0, card.getWidth(), 0.001);
+        assertEquals(600.0, card.getHeight(), 0.001);
+    }
+
+    @Test
+    public void testNewShowcaseExamplesLoad() {
+        NodeRepository repo = NodeRepository.of(
+                NodeLibrary.loadSystemLibrary("math"),
+                NodeLibrary.loadSystemLibrary("string"),
+                NodeLibrary.loadSystemLibrary("color"),
+                NodeLibrary.loadSystemLibrary("list"),
+                NodeLibrary.loadSystemLibrary("data"),
+                NodeLibrary.loadSystemLibrary("corevector"),
+                NodeLibrary.loadSystemLibrary("network")
+        );
+        File[] exampleFiles = new File[]{
+                new File("examples/02 Topics/Graphic Design/04 Multi-Artboard Campaign/04 Multi-Artboard Campaign.ndbx"),
+                new File("examples/02 Topics/Graphic Design/05 Generative Halftone Poster/05 Generative Halftone Poster.ndbx"),
+                new File("examples/02 Topics/Graphic Design/06 3D Typography and Shadow/06 3D Typography and Shadow.ndbx"),
+                new File("examples/02 Topics/Generative Design/Organic Flow Field/Organic Flow Field.ndbx"),
+                new File("examples/02 Topics/Generative Design/Voronoi Crystal Mesh/Voronoi Crystal Mesh.ndbx"),
+                new File("examples/02 Topics/Generative Design/L-System Fractal Tree/L-System Fractal Tree.ndbx")
+        };
+        for (File f : exampleFiles) {
+            assertTrue("Example file should exist: " + f.getPath(), f.exists());
+            NodeLibrary lib = NodeLibrary.load(f, repo);
+            assertNotNull("Loaded library should not be null for " + f.getName(), lib);
+            assertNotNull("Root node should exist for " + f.getName(), lib.getRoot());
+        }
+    }
 }
+
