@@ -239,12 +239,15 @@ public class DraggableNumber extends JComponent implements MouseListener, MouseM
     @Override
     public void paintComponent(Graphics g) {
         Graphics2D g2 = (Graphics2D) g;
-        // g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         Rectangle r = getBounds();
-        int centerWidth = r.width - draggerLeftWidth - draggerRightWidth;
-        g2.drawImage(draggerLeft, 0, 0, null);
-        g2.drawImage(draggerRight, r.width - draggerRightWidth, 0, null);
-        g2.drawImage(draggerBackground, draggerLeftWidth, 0, centerWidth, draggerHeight, null);
+        if (Theme.isDark()) {
+            Theme.paintDraggableNumber(g2, r.width, draggerHeight, isEnabled());
+        } else {
+            int centerWidth = r.width - draggerLeftWidth - draggerRightWidth;
+            g2.drawImage(draggerLeft, 0, 0, null);
+            g2.drawImage(draggerRight, r.width - draggerRightWidth, 0, null);
+            g2.drawImage(draggerBackground, draggerLeftWidth, 0, centerWidth, draggerHeight, null);
+        }
         g2.setFont(Theme.SMALL_BOLD_FONT);
         if (isEnabled()) {
             g2.setColor(Theme.TEXT_NORMAL_COLOR);
@@ -308,6 +311,15 @@ public class DraggableNumber extends JComponent implements MouseListener, MouseM
     }
 
     private void showNumberField() {
+        if (Theme.isDark()) {
+            numberField.setBackground(new Color(36, 36, 40));
+            numberField.setForeground(Theme.TEXT_NORMAL_COLOR);
+            numberField.setCaretColor(Theme.TEXT_NORMAL_COLOR);
+        } else {
+            numberField.setBackground(Color.WHITE);
+            numberField.setForeground(Color.BLACK);
+            numberField.setCaretColor(Color.BLACK);
+        }
         numberField.setText(valueAsString());
         numberField.setVisible(true);
         numberField.requestFocus();

@@ -277,6 +277,10 @@ public class NodeBoxDocument extends JFrame implements WindowListener, HandleDel
         return ImmutableList.copyOf(deviceHandlers);
     }
 
+    public NetworkView getNetworkView() {
+        return networkView;
+    }
+
     //// Node Library management ////
 
     public NodeLibrary getNodeLibrary() {
@@ -1331,11 +1335,13 @@ public class NodeBoxDocument extends JFrame implements WindowListener, HandleDel
             activeRenderStartNanos = System.nanoTime();
             List<?> results;
             Throwable error = null;
+            Map<String, Long> execTimes = null;
             try {
                 NodeContext context = new NodeContext(request.library, request.functions, request.data,
                         ImmutableMap.<String, Object>of(), request.cache);
                 results = context.renderNode(request.network);
                 context.renderAlwaysRenderedNodes(request.network);
+                execTimes = new HashMap<String, Long>(context.getExecutionTimes());
             } catch (Throwable t) {
                 results = ImmutableList.of();
                 error = t;
@@ -1345,18 +1351,19 @@ public class NodeBoxDocument extends JFrame implements WindowListener, HandleDel
 
             final List<?> deliveredResults = results;
             final Throwable deliveredError = error;
+            final Map<String, Long> deliveredExecTimes = execTimes;
             final int generation = request.generation;
             SwingUtilities.invokeLater(new Runnable() {
                 @Override
                 public void run() {
-                    applyRenderResult(generation, deliveredResults, deliveredError, renderNanos);
+                    applyRenderResult(generation, deliveredResults, deliveredError, renderNanos, deliveredExecTimes);
                 }
             });
         }
     }
 
     /** Apply a completed render's result on the EDT, unless it was canceled. */
-    private void applyRenderResult(int generation, List<?> results, Throwable error, long renderNanos) {
+    private void applyRenderResult(int generation, List<?> results, Throwable error, long renderNanos, Map<String, Long> execTimes) {
         PerfMonitor.recordRender(renderNanos);
         if (generation <= canceledGeneration) {
             // Canceled via the stop button after this render started; keep the previous output.
@@ -1368,6 +1375,9 @@ public class NodeBoxDocument extends JFrame implements WindowListener, HandleDel
             networkPane.setError(error);
         }
         lastRenderResult = results;
+        if (execTimes != null) {
+            networkView.setExecutionTimes(execTimes);
+        }
         networkView.checkErrorAndRepaint();
         if (fullScreenFrame != null)
             fullScreenFrame.setOutputValues(results);
@@ -1685,6 +1695,95 @@ public class NodeBoxDocument extends JFrame implements WindowListener, HandleDel
         ObjectsRenderer.render(objects, getCanvasBounds().getBounds2D(), file, options);
     }
 
+    public boolean exportAllArtboards() {
+        java.util.List<nodebox.graphics.Artboard> artboards = new java.util.ArrayList<nodebox.graphics.Artboard>();
+
+        // 1. Scan active network child nodes for artboards
+        Node network = getActiveNetwork();
+        String netPath = getActiveNetworkPath();
+        if (network != null) {
+            for (Node child : network.getChildren()) {
+                if ("corevector/artboard".equals(child.getFunction()) ||
+                    (child.getPrototype() != null && "artboard".equals(child.getPrototype().getName())) ||
+                    child.getName().toLowerCase().contains("artboard")) {
+                    try {
+                        nodebox.node.NodeContext ctx = new nodebox.node.NodeContext(getNodeLibrary(), getFunctionRepository(),
+                                com.google.common.collect.ImmutableMap.<String, Object>of(),
+                                com.google.common.collect.ImmutableMap.<String, Object>of(),
+                                renderCache);
+                        String childPath = Node.path(netPath, child.getName());
+                        List<?> res = ctx.renderNode(childPath);
+                        if (res != null) {
+                            for (Object o : res) {
+                                if (o instanceof nodebox.graphics.Artboard) {
+                                    artboards.add((nodebox.graphics.Artboard) o);
+                                }
+                            }
+                        }
+                    } catch (Exception e) {
+                        // ignore evaluation failure for unconfigured node
+                    }
+                }
+            }
+        }
+
+        // 2. Also check lastRenderResult for any artboard objects
+        if (lastRenderResult != null) {
+            for (Object obj : lastRenderResult) {
+                if (obj instanceof nodebox.graphics.Artboard && !artboards.contains(obj)) {
+                    artboards.add((nodebox.graphics.Artboard) obj);
+                }
+            }
+        }
+
+        if (artboards.isEmpty()) {
+            JOptionPane.showMessageDialog(this,
+                    "No Artboard nodes found in the current network.\nCreate one using Node > Create New Node > 'artboard' to define multiple canvas frames.",
+                    "Export All Artboards",
+                    JOptionPane.INFORMATION_MESSAGE);
+            return false;
+        }
+
+        JFileChooser chooser = new JFileChooser(lastExportPath);
+        chooser.setDialogTitle("Select Destination Folder for Artboards");
+        chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+        if (chooser.showSaveDialog(this) != JFileChooser.APPROVE_OPTION) {
+            return false;
+        }
+        File targetDir = chooser.getSelectedFile();
+        if (targetDir == null) return false;
+        if (!targetDir.exists()) targetDir.mkdirs();
+        lastExportPath = targetDir.getAbsolutePath();
+
+        String[] formats = new String[]{"PNG", "SVG", "PDF"};
+        String chosenFormat = (String) JOptionPane.showInputDialog(
+                this,
+                "Select export format for " + artboards.size() + " artboard(s):",
+                "Export All Artboards",
+                JOptionPane.QUESTION_MESSAGE,
+                null,
+                formats,
+                "PNG");
+        if (chosenFormat == null) return false;
+
+        ExportFormat exportFormat = ExportFormat.valueOf(chosenFormat);
+        int count = 0;
+        for (nodebox.graphics.Artboard artboard : artboards) {
+            String safeName = artboard.getName().replaceAll("[^a-zA-Z0-9._-]", "_");
+            if (safeName.isEmpty()) safeName = "artboard_" + (count + 1);
+            File artboardFile = new File(targetDir, safeName);
+            artboardFile = exportFormat.ensureFileExtension(artboardFile);
+            ObjectsRenderer.render(artboard.getContentForExport().getPaths(), artboard.getExportBounds(), artboardFile, com.google.common.collect.ImmutableMap.<String, Object>of());
+            count++;
+        }
+
+        JOptionPane.showMessageDialog(this,
+                "Successfully exported " + count + " artboard(s) to:\n" + targetDir.getAbsolutePath(),
+                "Export Complete",
+                JOptionPane.INFORMATION_MESSAGE);
+        return true;
+    }
+
     public boolean exportRange() {
         File exportDirectory = lastExportPath == null ? null : new File(lastExportPath);
         if (exportDirectory != null && !exportDirectory.exists())
@@ -1931,6 +2030,16 @@ public class NodeBoxDocument extends JFrame implements WindowListener, HandleDel
         }
     }
 
+    public void showQuickAddDialog(Point gridPt, Point screenPt) {
+        NodeRepository repository = getNodeRepository();
+        QuickAddDialog dialog = new QuickAddDialog(this, controller.getNodeLibrary(), repository);
+        dialog.setLocationRelativeToScreenPoint(screenPt);
+        dialog.setVisible(true);
+        if (dialog.getSelectedNode() != null) {
+            createNode(dialog.getSelectedNode(), new nodebox.graphics.Point(gridPt));
+        }
+    }
+
     public void showCodeLibraries() {
         CodeLibrariesDialog dialog = new CodeLibrariesDialog(this, getNodeLibrary().getFunctionRepository());
         dialog.setVisible(true);
@@ -2064,5 +2173,46 @@ public class NodeBoxDocument extends JFrame implements WindowListener, HandleDel
                 dialog.updateProgress(frame);
             }
         }
+    }
+
+    public void updateTheme() {
+        if (viewerPane != null && viewerPane.getViewer() != null) {
+            viewerPane.getViewer().updateTheme();
+        }
+        if (dataSheet != null) {
+            dataSheet.updateTheme();
+        }
+        if (networkPane != null && networkPane.getNetworkView() != null) {
+            networkPane.getNetworkView().setBackground(Theme.NETWORK_BACKGROUND_COLOR);
+            networkPane.getNetworkView().updateTheme();
+            networkPane.repaint();
+        }
+        if (portView != null) {
+            portView.updateAll();
+        }
+        if (addressBar != null) {
+            addressBar.repaint();
+        }
+        if (progressPanel != null) {
+            progressPanel.repaint();
+        }
+        if (animationBar != null) {
+            animationBar.repaint();
+        }
+        if (parameterNetworkSplit != null) {
+            parameterNetworkSplit.setBackground(Theme.SPLIT_PANE_BACKGROUND);
+            parameterNetworkSplit.updateUI();
+            parameterNetworkSplit.repaint();
+        }
+        if (topSplit != null) {
+            topSplit.setBackground(Theme.SPLIT_PANE_BACKGROUND);
+            topSplit.updateUI();
+            topSplit.repaint();
+        }
+        if (menuBar != null) {
+            menuBar.updateTheme();
+        }
+        SwingUtilities.updateComponentTreeUI(this);
+        repaint();
     }
 }

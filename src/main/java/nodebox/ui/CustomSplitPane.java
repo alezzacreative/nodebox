@@ -18,6 +18,13 @@ public class CustomSplitPane extends JSplitPane {
         setResizeWeight(0.5);
         setDividerLocation(0.5);
         setDividerSize(7);
+        setBackground(Theme.SPLIT_PANE_BACKGROUND);
+    }
+
+    @Override
+    public void updateUI() {
+        super.updateUI();
+        setBackground(Theme.SPLIT_PANE_BACKGROUND);
     }
 
     protected BasicSplitPaneUI createUI() {
@@ -31,16 +38,17 @@ public class CustomSplitPane extends JSplitPane {
             return new BasicSplitPaneDivider(CustomSplitPaneUI.this) {
                 @Override
                 public void paint(Graphics g) {
-                    Rectangle r = getBounds();
-                    g.setColor(Color.LIGHT_GRAY);
-                    g.fillRect(r.x, r.y, r.width, r.height);
-                    g.setColor(Color.GRAY);
+                    int w = getWidth();
+                    int h = getHeight();
+                    g.setColor(Theme.SPLIT_PANE_BACKGROUND);
+                    g.fillRect(0, 0, w, h);
+                    g.setColor(Theme.SPLIT_PANE_BORDER);
                     if (getOrientation() == JSplitPane.VERTICAL_SPLIT) {
-                        g.drawLine(0, 0, r.width, 0);
-                        g.drawLine(0, dividerSize - 1, r.width, dividerSize - 1);
+                        g.drawLine(0, 0, w, 0);
+                        g.drawLine(0, h - 1, w, h - 1);
                     } else {
-                        g.drawLine(0, 0, 0, r.height);
-                        g.drawLine(dividerSize - 1, 0, dividerSize - 1, r.height);
+                        g.drawLine(0, 0, 0, h);
+                        g.drawLine(w - 1, 0, w - 1, h);
                     }
                 }
             };

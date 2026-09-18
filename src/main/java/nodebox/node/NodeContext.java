@@ -23,6 +23,7 @@ public final class NodeContext {
     private final Map<String, List<?>> renderResults;
     private final Map<NodeArguments, List<?>> nodeArgumentsResults;
     private final Map<String, ?> portOverrides;
+    private final Map<String, Long> executionTimes = new HashMap<String, Long>();
 
     // Cross-render result cache, shared across NodeContext instances (each render builds a fresh
     // context but reuses the document's cache). May be null, in which case nothing is cached across
@@ -82,6 +83,10 @@ public final class NodeContext {
 
     public Map<String, ?> getData() {
         return data;
+    }
+
+    public Map<String, Long> getExecutionTimes() {
+        return executionTimes;
     }
 
     private Node getNodeForPath(String nodePath) {
@@ -279,7 +284,14 @@ public final class NodeContext {
     private Object invokeNode(String nodePath, Object[] arguments) {
         Node node = getNodeForPath(nodePath);
         Function function = functionRepository.getFunction(node.getFunction());
-        return invokeFunction(node, function, arguments);
+        long t0 = System.nanoTime();
+        try {
+            return invokeFunction(node, function, arguments);
+        } finally {
+            long elapsed = System.nanoTime() - t0;
+            Long prev = executionTimes.get(nodePath);
+            executionTimes.put(nodePath, prev != null ? prev + elapsed : elapsed);
+        }
     }
 
     private List<?> convertResultsForPort(Port port, List<?> values) {

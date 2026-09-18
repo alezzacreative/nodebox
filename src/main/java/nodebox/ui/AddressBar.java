@@ -97,7 +97,7 @@ public class AddressBar extends JPanel implements MouseListener {
 
         g2.setFont(Theme.SMALL_BOLD_FONT);
 
-        g2.drawImage(addressGradient, 0, 0, getWidth(), 25, null);
+        Theme.paintAddressBackground(g2, 0, 0, getWidth(), 25);
 
         int x = 10;
 

@@ -1,6 +1,7 @@
 package nodebox.client;
 
 import nodebox.ui.AddressBar;
+import nodebox.ui.Theme;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
@@ -51,7 +52,11 @@ public class ProgressPanel extends JComponent {
 
     @Override
     protected void paintComponent(Graphics g) {
-        g.drawImage(backgroundImage, 0, 0, getWidth(), PROGRESS_PANEL_HEIGHT, null);
+        if (Theme.isDark()) {
+            Theme.paintAddressBackground((Graphics2D) g, 0, 0, getWidth(), PROGRESS_PANEL_HEIGHT);
+        } else {
+            g.drawImage(backgroundImage, 0, 0, getWidth(), PROGRESS_PANEL_HEIGHT, null);
+        }
     }
 
     public void setInProgress(boolean visible) {

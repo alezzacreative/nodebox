@@ -25,6 +25,7 @@ import nodebox.ui.ExceptionDialog;
 import nodebox.ui.LastResortHandler;
 import nodebox.ui.Platform;
 import nodebox.ui.ProgressDialog;
+import nodebox.ui.Theme;
 import nodebox.versioncheck.Host;
 import nodebox.versioncheck.Updater;
 import nodebox.versioncheck.Version;
@@ -47,6 +48,15 @@ public class Application implements Host {
 
     public static final String PREFERENCE_ENABLE_DEVICE_SUPPORT = "NBEnableDeviceSupport";
     public static boolean ENABLE_DEVICE_SUPPORT = false;
+    public static final String PREFERENCE_THEME = "NBTheme";
+    public static final String THEME_LIGHT = Theme.THEME_LIGHT;
+    public static final String THEME_DARK = Theme.THEME_DARK;
+    public static final String PREFERENCE_CABLE_STYLE = "NBCableStyle";
+    public static final String CABLE_STYLE_CURVED = "curved";
+    public static final String CABLE_STYLE_STRAIGHT = "straight";
+    public static final String CABLE_STYLE_ORTHOGONAL = "orthogonal";
+
+    private String cableStyle = CABLE_STYLE_CURVED;
 
     private static Application instance;
 
@@ -186,6 +196,7 @@ public class Application implements Host {
         }
         System.setProperty("apple.laf.useScreenMenuBar", "true");
         UIManager.put("Table.alternateRowColor", new Color(243, 246, 250));
+        Theme.captureDefaults();
     }
 
     /**
@@ -232,6 +243,39 @@ public class Application implements Host {
     private void applyPreferences() {
         Preferences preferences = Preferences.userNodeForPackage(Application.class);
         ENABLE_DEVICE_SUPPORT = Boolean.valueOf(preferences.get(Application.PREFERENCE_ENABLE_DEVICE_SUPPORT, "false"));
+        String theme = preferences.get(Application.PREFERENCE_THEME, Application.THEME_LIGHT);
+        Theme.setTheme(theme);
+        cableStyle = preferences.get(Application.PREFERENCE_CABLE_STYLE, CABLE_STYLE_CURVED);
+    }
+
+    public String getCableStyle() {
+        return cableStyle != null ? cableStyle : CABLE_STYLE_CURVED;
+    }
+
+    public void setCableStyle(String style) {
+        this.cableStyle = style;
+        Preferences preferences = Preferences.userNodeForPackage(Application.class);
+        preferences.put(PREFERENCE_CABLE_STYLE, style);
+        try {
+            preferences.flush();
+        } catch (Exception ignored) {
+        }
+        for (NodeBoxDocument doc : getDocuments()) {
+            doc.getNetworkView().repaint();
+        }
+    }
+
+    public void applyTheme(String themeName) {
+        Theme.setTheme(themeName);
+        for (NodeBoxDocument doc : getDocuments()) {
+            doc.updateTheme();
+        }
+        if (examplesBrowser != null) {
+            examplesBrowser.updateTheme();
+        }
+        if (console != null) {
+            console.updateTheme();
+        }
     }
 
     /**

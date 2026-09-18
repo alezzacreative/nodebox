@@ -1,6 +1,7 @@
 package nodebox.client;
 
 import nodebox.ui.Platform;
+import nodebox.ui.Theme;
 import nodebox.util.FileUtils;
 import static nodebox.ui.Platform.COMMAND_DOWN_MASK;
 
@@ -63,6 +64,7 @@ public class NodeBoxMenuBar extends JMenuBar {
         fileMenu.add(new DocumentPropertiesAction());
         fileMenu.addSeparator();
         fileMenu.add(new ExportAction());
+        fileMenu.add(new ExportAllArtboardsAction());
         fileMenu.add(new ExportRangeAction());
         fileMenu.add(new ExportMovieAction());
         if (!Platform.onMac()) {
@@ -121,6 +123,50 @@ public class NodeBoxMenuBar extends JMenuBar {
         helpMenu.add(new CheckForUpdatesAction());
         helpMenu.add(new NodeboxSiteAction());
         add(helpMenu);
+
+        updateTheme();
+    }
+
+    @Override
+    protected void paintComponent(Graphics g) {
+        g.setColor(Theme.isDark() ? Theme.MENUBAR_BACKGROUND : new Color(245, 245, 245));
+        g.fillRect(0, 0, getWidth(), getHeight());
+    }
+
+    public void updateTheme() {
+        boolean dark = Theme.isDark();
+        if (!Platform.onMac()) {
+            setUI(new javax.swing.plaf.basic.BasicMenuBarUI());
+        }
+        setBackground(dark ? Theme.MENUBAR_BACKGROUND : new Color(245, 245, 245));
+        setForeground(dark ? new Color(228, 228, 231) : new Color(30, 30, 32));
+        setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, dark ? Theme.SPLIT_PANE_BORDER : new Color(215, 215, 220)));
+        setOpaque(true);
+
+        for (int i = 0; i < getMenuCount(); i++) {
+            JMenu menu = getMenu(i);
+            if (menu != null) {
+                applyMenuTheme(menu, dark);
+            }
+        }
+        repaint();
+    }
+
+    private void applyMenuTheme(JMenuItem item, boolean dark) {
+        if (item == null) return;
+        Theme.applyMenuItemTheme(item, dark);
+        if (item instanceof JMenu) {
+            JMenu menu = (JMenu) item;
+            menu.setOpaque(false);
+            menu.setForeground(dark ? new Color(228, 228, 231) : new Color(30, 30, 32));
+            Theme.applyPopupMenuTheme(menu.getPopupMenu());
+            for (int i = 0; i < menu.getItemCount(); i++) {
+                JMenuItem child = menu.getItem(i);
+                if (child != null) {
+                    applyMenuTheme(child, dark);
+                }
+            }
+        }
     }
 
     public void updateUndoRedoState() {
@@ -183,12 +229,44 @@ public class NodeBoxMenuBar extends JMenuBar {
         return fileList;
     }
 
+    public static void clearRecentFiles() {
+        for (int i = 1; i <= 10; i++) {
+            recentFilesPreferences.remove(String.valueOf(i));
+        }
+        try {
+            recentFilesPreferences.flush();
+        } catch (BackingStoreException e) {
+            logger.log(Level.WARNING, "Could not clear recent files preferences", e);
+        }
+        buildRecentFileMenu();
+    }
+
     private static void buildRecentFileMenu() {
+        boolean dark = Theme.isDark();
+        ArrayList<File> recentFiles = getRecentFiles();
         for (JMenu recentFileMenu : recentFileMenus) {
             recentFileMenu.removeAll();
-            for (File f : getRecentFiles()) {
-                recentFileMenu.add(new OpenRecentAction(f));
+            if (recentFiles.isEmpty()) {
+                JMenuItem emptyItem = new JMenuItem("(No Recent Files)");
+                emptyItem.setEnabled(false);
+                Theme.applyMenuItemTheme(emptyItem, dark);
+                recentFileMenu.add(emptyItem);
+            } else {
+                for (File f : recentFiles) {
+                    JMenuItem item = new JMenuItem(new OpenRecentAction(f));
+                    Theme.applyMenuItemTheme(item, dark);
+                    recentFileMenu.add(item);
+                }
+                recentFileMenu.addSeparator();
+                JMenuItem clearItem = new JMenuItem(new AbstractAction("Clear Recent Files") {
+                    public void actionPerformed(ActionEvent e) {
+                        clearRecentFiles();
+                    }
+                });
+                Theme.applyMenuItemTheme(clearItem, dark);
+                recentFileMenu.add(clearItem);
             }
+            Theme.applyPopupMenuTheme(recentFileMenu.getPopupMenu());
         }
     }
 
@@ -341,6 +419,17 @@ public class NodeBoxMenuBar extends JMenuBar {
 
         public void actionPerformed(ActionEvent e) {
             getDocument().doExport();
+        }
+    }
+
+    public class ExportAllArtboardsAction extends AbstractDocumentAction {
+        public ExportAllArtboardsAction() {
+            putValue(NAME, "Export All Artboards...");
+            putValue(ACCELERATOR_KEY, Platform.getKeyStroke(KeyEvent.VK_A, InputEvent.SHIFT_DOWN_MASK | COMMAND_DOWN_MASK));
+        }
+
+        public void actionPerformed(ActionEvent e) {
+            getDocument().exportAllArtboards();
         }
     }
 

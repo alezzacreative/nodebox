@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<ndbx formatVersion="17" type="file" uuid="a1b2c3d4-e5f6-7890-abcd-ef1234567803">
+    <property name="canvasHeight" value="800"/>
+    <property name="canvasWidth" value="800"/>
+    <node name="root" prototype="core.network" renderedChild="shadow">
+        <node name="circle1" position="1.00,1.00" prototype="corevector.ellipse">
+            <port name="position" type="point" value="-60.00,0.00"/>
+            <port name="width" type="float" value="140.0"/>
+            <port name="height" type="float" value="140.0"/>
+        </node>
+        <node name="circle2" position="4.00,1.00" prototype="corevector.ellipse">
+            <port name="position" type="point" value="60.00,0.00"/>
+            <port name="width" type="float" value="110.0"/>
+            <port name="height" type="float" value="110.0"/>
+        </node>
+        <node name="circle3" position="7.00,1.00" prototype="corevector.ellipse">
+            <port name="position" type="point" value="0.00,-70.00"/>
+            <port name="width" type="float" value="90.0"/>
+            <port name="height" type="float" value="90.0"/>
+        </node>
+        <node name="combine_circles" position="3.00,3.00" prototype="list.combine"/>
+        <node name="blobs" position="3.00,5.00" prototype="corevector.metaballs">
+            <port name="threshold" type="float" value="70.0"/>
+            <port name="handleFactor" type="float" value="0.6"/>
+            <port name="unite" type="boolean" value="true"/>
+        </node>
+        <node name="colorize_blob" position="3.00,7.00" prototype="corevector.colorize">
+            <port name="fill" type="color" value="#4f46e5ff"/>
+        </node>
+        <node name="shadow" position="3.00,9.00" prototype="corevector.long_shadow">
+            <port name="angle" type="float" value="45.0"/>
+            <port name="distance" type="float" value="80.0"/>
+            <port name="fade" type="float" value="0.3"/>
+        </node>
+        <conn input="combine_circles.list1" output="circle1"/>
+        <conn input="combine_circles.list2" output="circle2"/>
+        <conn input="combine_circles.list3" output="circle3"/>
+        <conn input="blobs.circles" output="combine_circles"/>
+        <conn input="colorize_blob.shape" output="blobs"/>
+        <conn input="shadow.shape" output="colorize_blob"/>
+    </node>
+</ndbx>

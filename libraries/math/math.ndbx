@@ -176,5 +176,32 @@
                 <menu key="sawtooth" label="Sawtooth"/>
             </port>
         </node>
+        <node category="math" description="Evaluate a mathematical expression using variables x, y, z, t." function="math/expression" image="expression.png" name="expression" position="1.00,41.00">
+            <port name="expression" range="value" type="string" value="sin(x) * 50" widget="string"/>
+            <port name="x" range="value" type="float" value="0.0" widget="float"/>
+            <port name="y" range="value" type="float" value="0.0" widget="float"/>
+            <port name="z" range="value" type="float" value="0.0" widget="float"/>
+            <port name="t" range="value" type="float" value="0.0" widget="float"/>
+        </node>
+        <node category="math" description="Generate 2D/3D Simplex, Worley, or Fractal Brownian Motion noise." function="math/noise" image="noise.png" name="noise" position="1.00,42.00">
+            <port name="x" range="value" type="float" value="0.0" widget="float"/>
+            <port name="y" range="value" type="float" value="0.0" widget="float"/>
+            <port name="z" range="value" type="float" value="0.0" widget="float"/>
+            <port name="type" range="value" type="string" value="simplex" widget="menu">
+                <menu key="simplex" label="Simplex"/>
+                <menu key="worley" label="Worley (Cellular)"/>
+                <menu key="ridge" label="Ridge"/>
+            </port>
+            <port min="1.0" max="8.0" name="octaves" range="value" type="int" value="1" widget="int"/>
+            <port min="0.0" max="1.0" name="roughness" range="value" type="float" value="0.5" widget="float"/>
+        </node>
+        <node category="math" description="Simulate a damped spring oscillator." function="math/spring" image="spring.png" name="spring" position="1.00,43.00">
+            <port name="current" range="value" type="float" value="0.0" widget="float"/>
+            <port name="target" range="value" type="float" value="100.0" widget="float"/>
+            <port name="velocity" range="value" type="float" value="0.0" widget="float"/>
+            <port name="tension" range="value" type="float" value="150.0" widget="float"/>
+            <port name="damping" range="value" type="float" value="10.0" widget="float"/>
+            <port name="mass" range="value" type="float" value="1.0" widget="float"/>
+        </node>
     </node>
 </ndbx>

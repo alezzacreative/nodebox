@@ -48,7 +48,7 @@ public class PaneHeader extends JPanel {
 
     @Override
     protected void paintComponent(Graphics g) {
-        g.drawImage(paneHeaderBackground, 0, 0, getWidth(), 25, null);
+        Theme.paintHeaderBackground((Graphics2D) g, 0, 0, getWidth(), 25);
     }
 
     private final class ShadowLabel extends JLabel {

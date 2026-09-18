@@ -122,6 +122,8 @@ public class ColorDialog extends JDialog implements ChangeListener {
 
         JButton cancelButton = new JButton(cancelAction);
         JButton okButton = new JButton(okAction);
+        cancelButton.setUI(new ThemeButtonUI());
+        okButton.setUI(new ThemeButtonUI());
 
         d = new Dimension(Integer.MAX_VALUE, 30);
         JPanel bottomPanel = new JPanel();
@@ -141,6 +143,14 @@ public class ColorDialog extends JDialog implements ChangeListener {
 
         Container contents = getContentPane();
         contents.setLayout(new BoxLayout(contents, BoxLayout.Y_AXIS));
+
+        // Apply theme styling
+        Color dialogBg = Theme.DIALOG_BACKGROUND;
+        contents.setBackground(dialogBg);
+        topPanel.setBackground(dialogBg);
+        hexPanel.setBackground(dialogBg);
+        bottomPanel.setBackground(dialogBg);
+
         contents.add(topPanel);
         contents.add(hue);
         contents.add(saturation);
@@ -476,10 +486,11 @@ public class ColorDialog extends JDialog implements ChangeListener {
             setMinimumSize(d);
             setPreferredSize(d);
             setMaximumSize(d);
+            setBackground(Theme.DIALOG_BACKGROUND);
             JLabel label = new JLabel(nodebox.util.StringUtils.humanizeName(colorComponent.toString().toLowerCase(Locale.US)), JLabel.RIGHT);
             Dimension size = label.getSize();
             label.setFont(Theme.SMALL_BOLD_FONT);
-            label.setForeground(new Color(66, 66, 66));
+            label.setForeground(Theme.TEXT_NORMAL_COLOR);
             label.setPreferredSize(new Dimension(75, size.height));
             label.setAlignmentY(JLabel.CENTER);
             label.setBorder(new EmptyBorder(3, 0, 0, 0));

@@ -42,23 +42,25 @@ public class ExportMovieDialog extends JDialog implements ActionListener {
         add(mainPanel, BorderLayout.CENTER);
 
         // Directory
+        JLabel fileLabel = new JLabel("File:  ");
         JPanel filePanel = new JPanel(new FlowLayout(FlowLayout.LEADING, 0, 0));
-        filePanel.add(new JLabel("File:  "));
+        filePanel.add(fileLabel);
         fileField = new JTextField(20);
         fileField.setEditable(false);
         filePanel.add(fileField);
         JButton chooseButton = new JButton("...");
-        chooseButton.putClientProperty("JButton.buttonType", "gradient");
-        chooseButton.setPreferredSize(new Dimension(30, 27));
+        chooseButton.setPreferredSize(new Dimension(34, 25));
         chooseButton.addActionListener(this);
+        filePanel.add(Box.createHorizontalStrut(5));
         filePanel.add(chooseButton);
         mainPanel.add(filePanel);
 
         mainPanel.add(Box.createVerticalStrut(10));
 
         // Format
+        JLabel formatLabel = new JLabel("Format/Device: ");
         JPanel formatPanel = new JPanel(new FlowLayout(FlowLayout.LEADING, 0, 0));
-        formatPanel.add(new JLabel("Format/Device: "));
+        formatPanel.add(formatLabel);
         mainPanel.add(formatPanel);
         formatBox = new JComboBox<>();
         for (VideoFormat format : Movie.VIDEO_FORMATS) {
@@ -69,11 +71,13 @@ public class ExportMovieDialog extends JDialog implements ActionListener {
 
         mainPanel.add(Box.createVerticalStrut(10));
         // Range
+        JLabel fromLabel = new JLabel("From:");
+        JLabel toLabel = new JLabel("To:");
         JPanel rangePanel = new JPanel(new FlowLayout(FlowLayout.LEADING, 10, 0));
-        rangePanel.add(new JLabel("From:"));
+        rangePanel.add(fromLabel);
         fromField = new JTextField("1", 5);
         rangePanel.add(fromField);
-        rangePanel.add(new JLabel("To:"));
+        rangePanel.add(toLabel);
         toField = new JTextField("100", 5);
         rangePanel.add(toField);
         mainPanel.add(rangePanel);
@@ -100,6 +104,38 @@ public class ExportMovieDialog extends JDialog implements ActionListener {
             exportButton.setEnabled(false);
         buttonPanel.add(exportButton);
         mainPanel.add(buttonPanel, BorderLayout.SOUTH);
+
+        // Apply theme styling
+        Color dialogBg = Theme.DIALOG_BACKGROUND;
+        getContentPane().setBackground(dialogBg);
+        mainPanel.setBackground(dialogBg);
+        filePanel.setBackground(dialogBg);
+        formatPanel.setBackground(dialogBg);
+        rangePanel.setBackground(dialogBg);
+        buttonPanel.setBackground(dialogBg);
+
+        fileLabel.setForeground(Theme.TEXT_NORMAL_COLOR);
+        formatLabel.setForeground(Theme.TEXT_NORMAL_COLOR);
+        fromLabel.setForeground(Theme.TEXT_NORMAL_COLOR);
+        toLabel.setForeground(Theme.TEXT_NORMAL_COLOR);
+
+        Color inputBg = Theme.isDark() ? new Color(26, 26, 30) : Color.WHITE;
+        Color inputBorder = Theme.isDark() ? new Color(60, 60, 66) : new Color(195, 195, 202);
+        fileField.setBackground(inputBg);
+        fileField.setForeground(Theme.TEXT_NORMAL_COLOR);
+        fileField.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(inputBorder), BorderFactory.createEmptyBorder(2, 4, 2, 4)));
+        fromField.setBackground(inputBg);
+        fromField.setForeground(Theme.TEXT_NORMAL_COLOR);
+        fromField.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(inputBorder), BorderFactory.createEmptyBorder(2, 4, 2, 4)));
+        toField.setBackground(inputBg);
+        toField.setForeground(Theme.TEXT_NORMAL_COLOR);
+        toField.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(inputBorder), BorderFactory.createEmptyBorder(2, 4, 2, 4)));
+
+        formatBox.setUI(new nodebox.ui.ThemeComboBoxUI());
+        chooseButton.setUI(new nodebox.ui.ThemeButtonUI());
+        cancelButton.setUI(new nodebox.ui.ThemeButtonUI());
+        exportButton.setUI(new nodebox.ui.ThemeButtonUI());
+
         pack();
 
         getRootPane().setDefaultButton(exportButton);

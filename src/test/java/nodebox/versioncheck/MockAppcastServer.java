@@ -18,15 +18,15 @@ public class MockAppcastServer implements Runnable {
         mediaRoot = new File("src/test/java/nodebox/versioncheck");
     }
 
-    public MockAppcastServer(int port) {
+    public MockAppcastServer(int port) throws IOException {
         this.port = port;
+        this.server = new ServerSocket(port);
     }
 
     public void run() {
         running = true;
         try {
-            server = new ServerSocket(port);
-            while (running) {
+            while (running && server != null && !server.isClosed()) {
                 Socket socket = server.accept();
                 handleRequest(socket);
             }
@@ -142,7 +142,7 @@ public class MockAppcastServer implements Runnable {
         return fileData.toString();
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
         MockAppcastServer server = new MockAppcastServer(8080);
         server.run();
     }

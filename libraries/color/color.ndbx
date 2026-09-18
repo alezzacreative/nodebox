@@ -26,5 +26,61 @@
             <port name="alpha" range="value" type="float" value="255.0" widget="float"/>
             <port name="range" range="value" type="float" value="255.0" widget="float"/>
         </node>
+        <node category="color" description="Generate a color harmony palette." function="color/palette" image="palette.png" name="palette" outputRange="list" outputType="color" position="1.00,5.00">
+            <port name="baseColor" range="value" type="color" value="#0077ffff" widget="color"/>
+            <port name="type" range="value" type="string" value="analogous" widget="menu">
+                <menu key="analogous" label="Analogous"/>
+                <menu key="complementary" label="Complementary"/>
+                <menu key="triadic" label="Triadic"/>
+                <menu key="tetradic" label="Tetradic"/>
+                <menu key="monochromatic" label="Monochromatic"/>
+                <menu key="split-complementary" label="Split Complementary"/>
+            </port>
+            <port min="1.0" name="count" range="value" type="int" value="5" widget="int"/>
+            <port name="spread" range="value" type="float" value="0.08" widget="float"/>
+        </node>
+        <node category="color" description="Sample an interpolated color along a multi-stop gradient using Oklab perceptual color space." function="color/gradient" image="palette.png" name="gradient" outputType="color" position="1.00,6.00">
+            <port name="colors" range="list" type="list" description="List of gradient stop colors."/>
+            <port min="0.0" max="1.0" name="position" range="value" type="float" value="0.5" widget="float" description="Position along the gradient (0.0 - 1.0 or 0 - 100)."/>
+            <port name="colorSpace" label="Color Space" range="value" type="string" value="oklab" widget="menu" description="Interpolation color space.">
+                <menu key="oklab" label="Oklab (Perceptual)"/>
+                <menu key="rgb" label="RGB"/>
+                <menu key="hsb" label="HSB"/>
+            </port>
+        </node>
+        <node category="color" description="Extract dominant color palette swatches from an image using K-Means clustering." function="color/extractPalette" image="palette.png" name="extract_palette" outputRange="list" outputType="color" position="1.00,7.00">
+            <port name="imageFile" label="Image" range="value" type="string" value="" widget="file" description="Path to the image file."/>
+            <port min="1.0" max="50.0" name="count" range="value" type="int" value="5" widget="int" description="Number of dominant colors to extract."/>
+            <port min="1.0" name="sampleStep" label="Sample Step" range="value" type="int" value="4" widget="int" description="Pixel sampling resolution step."/>
+        </node>
+        <node category="color" description="Blend two colors using standard graphic design blend modes." function="color/blend" image="palette.png" name="blend_mode" outputType="color" position="1.00,8.00">
+            <port name="baseColor" label="Base Color" range="value" type="color" value="#ffffffff" widget="color" description="Base background color."/>
+            <port name="blendColor" label="Blend Color" range="value" type="color" value="#ff0077ff" widget="color" description="Overlay blend color."/>
+            <port name="mode" label="Blend Mode" range="value" type="string" value="multiply" widget="menu" description="Graphic design blend mode.">
+                <menu key="multiply" label="Multiply"/>
+                <menu key="screen" label="Screen"/>
+                <menu key="overlay" label="Overlay"/>
+                <menu key="darken" label="Darken"/>
+                <menu key="lighten" label="Lighten"/>
+                <menu key="color_dodge" label="Color Dodge"/>
+                <menu key="color_burn" label="Color Burn"/>
+                <menu key="hard_light" label="Hard Light"/>
+                <menu key="soft_light" label="Soft Light"/>
+                <menu key="difference" label="Difference"/>
+                <menu key="exclusion" label="Exclusion"/>
+            </port>
+            <port min="0.0" max="1.0" name="opacity" range="value" type="float" value="1.0" widget="float" description="Blend opacity (0.0 - 1.0)."/>
+        </node>
+        <node category="color" description="Generate an angular / conical gradient sweep of colors around a center point." function="color/conicGradient" image="palette.png" name="conic_gradient" outputRange="list" outputType="color" position="1.00,9.00">
+            <port name="colors" range="list" type="list" description="List of gradient stop colors."/>
+            <port min="2.0" max="2000.0" name="steps" range="value" type="int" value="100" widget="int" description="Number of color steps around the sweep."/>
+            <port name="startAngle" label="Start Angle" range="value" type="float" value="0.0" widget="float" description="Sweep start angle in degrees."/>
+            <port name="endAngle" label="End Angle" range="value" type="float" value="360.0" widget="float" description="Sweep end angle in degrees."/>
+            <port name="space" label="Color Space" range="value" type="string" value="oklab" widget="menu" description="Interpolation color space.">
+                <menu key="oklab" label="Oklab (Perceptual)"/>
+                <menu key="rgb" label="RGB"/>
+                <menu key="hsb" label="HSB"/>
+            </port>
+        </node>
     </node>
 </ndbx>

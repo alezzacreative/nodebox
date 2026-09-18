@@ -4,6 +4,7 @@ import nodebox.client.devicehandler.DeviceControl;
 import nodebox.client.devicehandler.DeviceHandler;
 import nodebox.ui.ActionHeader;
 import nodebox.ui.InsetLabel;
+import nodebox.ui.Theme;
 
 import javax.swing.*;
 import java.awt.*;
@@ -56,9 +57,17 @@ public class DevicesDialog extends JDialog implements DeviceControl.OnPropertyCh
                 DevicesDialog.this.setVisible(false);
             }
         });
+        closeButton.setUI(new nodebox.ui.ThemeButtonUI());
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.TRAILING, 5, 5));
         buttonPanel.add(closeButton);
         add(buttonPanel, BorderLayout.SOUTH);
+
+        Color bg = Theme.isDark() ? Theme.PANEL_BACKGROUND : Theme.DIALOG_BACKGROUND;
+        getContentPane().setBackground(bg);
+        controlPanel.setBackground(bg);
+        buttonPanel.setBackground(bg);
+        scrollPane.getViewport().setBackground(bg);
+        getRootPane().setDefaultButton(closeButton);
 
         setSize(560, 400);
         setLocationRelativeTo(document);

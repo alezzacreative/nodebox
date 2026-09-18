@@ -47,6 +47,9 @@ public class Movie {
         VIDEO_FORMATS.add(MP4VideoFormat.HighFormat);
         VIDEO_FORMATS.add(MP4VideoFormat.MediumFormat);
         VIDEO_FORMATS.add(MP4VideoFormat.LowFormat);
+        VIDEO_FORMATS.add(GifVideoFormat.HighQualityGif);
+        VIDEO_FORMATS.add(GifVideoFormat.StandardGif);
+        VIDEO_FORMATS.add(WebmVideoFormat.WebmFormat);
     }
 
     private String movieFilename;

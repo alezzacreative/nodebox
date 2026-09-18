@@ -11,6 +11,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 
 import nodebox.ui.Platform;
+import nodebox.ui.Theme;
 
 public class NodeAttributesDialog  extends JDialog {
 
@@ -33,12 +34,19 @@ public class NodeAttributesDialog  extends JDialog {
         setModalityType(Dialog.ModalityType.DOCUMENT_MODAL);
 
         JButton cancelButton = new JButton(cancelAction);
+        cancelButton.setUI(new nodebox.ui.ThemeButtonUI());
         JButton okButton = new JButton(okAction);
+        okButton.setUI(new nodebox.ui.ThemeButtonUI());
         JPanel bottomPanel = new JPanel();
         bottomPanel.setLayout(new BoxLayout(bottomPanel, BoxLayout.X_AXIS));
+        bottomPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
         bottomPanel.add(Box.createHorizontalGlue());
         bottomPanel.add(cancelButton);
+        bottomPanel.add(Box.createHorizontalStrut(5));
         bottomPanel.add(okButton);
+        Color bg = Theme.isDark() ? Theme.PANEL_BACKGROUND : Theme.DIALOG_BACKGROUND;
+        bottomPanel.setBackground(bg);
+        getContentPane().setBackground(bg);
         getContentPane().add(bottomPanel, BorderLayout.SOUTH);
 
         getRootPane().setDefaultButton(okButton);

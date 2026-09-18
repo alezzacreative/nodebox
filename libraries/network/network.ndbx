@@ -16,5 +16,10 @@
             <port name="json" range="value" type="string" value="{&quot;name&quot;: {&quot;firstName&quot;: &quot;Lois&quot;, &quot;lastName&quot;: &quot;Lane&quot;}}" description="The JSON data, as a string."/>
             <port name="query" range="value" type="string" value="$.name.firstName" description="The JSON path query."/>
         </node>
+        <node name="fetch_json" category="network" description="Fetch a JSON resource from a URL and extract data using JSONPath." function="network/fetchJSON" position="1.00,2.00" outputRange="list">
+            <port name="url" range="value" type="string" value="https://api.github.com/zen" description="The URL to fetch JSON from."/>
+            <port name="query" range="value" type="string" value="$" description="The JSON path query (default $ for root)."/>
+            <port name="refreshTime" range="value" type="int" value="300" description="Cache time-to-live in seconds."/>
+        </node>
     </node>
 </ndbx>

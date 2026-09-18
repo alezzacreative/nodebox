@@ -117,7 +117,9 @@ public class NodeSelectionDialog extends JDialog {
     private class NodeRenderer extends JLabel implements ListCellRenderer<Node> {
 
         public Component getListCellRendererComponent(JList<? extends Node> list, Node node, int index, boolean isSelected, boolean cellHasFocus) {
-            String html = "<html><b>" + StringUtils.humanizeName(node.getName()) + "</b> - " + node.getDescription() + "</html>";
+            String titleColor = Theme.isDark() ? "#f4f4f5" : "#000000";
+            String descColor = Theme.isDark() ? "#a1a1aa" : "#555555";
+            String html = "<html><b style='color:" + titleColor + ";'>" + StringUtils.humanizeName(node.getName()) + "</b> <span style='color:" + descColor + ";'>- " + node.getDescription() + "</span></html>";
             setText(html);
             if (isSelected) {
                 setBackground(Theme.NODE_SELECTION_ACTIVE_BACKGROUND_COLOR);
@@ -130,9 +132,15 @@ public class NodeSelectionDialog extends JDialog {
             int nodePadding = NetworkView.NODE_PADDING;
             BufferedImage bi = new BufferedImage(iconSize + nodePadding * 2, iconSize + nodePadding * 2, BufferedImage.TYPE_INT_ARGB);
             Graphics g = bi.createGraphics();
-            g.setColor(NetworkView.portTypeColor(node.getOutputType()));
+            Color portColor = NetworkView.portTypeColor(node.getOutputType());
+            g.setColor(portColor);
             g.fillRect(0, 0, iconSize + nodePadding * 2, iconSize + nodePadding * 2);
-            g.drawImage(NetworkView.getImageForNode(node, repository), nodePadding, nodePadding, iconSize, iconSize, null, null);
+            BufferedImage nodeImg = NetworkView.getImageForNode(node, repository);
+            double luminance = 0.299 * portColor.getRed() + 0.587 * portColor.getGreen() + 0.114 * portColor.getBlue();
+            if (luminance > 130) {
+                nodeImg = NetworkView.getInvertedImage(nodeImg);
+            }
+            g.drawImage(nodeImg, nodePadding, nodePadding, iconSize, iconSize, null, null);
             setIcon(new ImageIcon(bi));
             setBorder(Theme.BOTTOM_BORDER);
             setOpaque(true);
@@ -168,7 +176,23 @@ public class NodeSelectionDialog extends JDialog {
         searchField.addKeyListener(arrowKeysListener);
         SearchFieldChangeListener searchFieldChangeListener = new SearchFieldChangeListener();
         searchField.getDocument().addDocumentListener(searchFieldChangeListener);
-        nodeList = new JList<>(filteredNodeListModel);
+        nodeList = new JList<Node>(filteredNodeListModel) {
+            @Override
+            public String getToolTipText(MouseEvent e) {
+                int index = locationToIndex(e.getPoint());
+                if (index > -1) {
+                    Rectangle bounds = getCellBounds(index, index);
+                    if (bounds != null && bounds.contains(e.getPoint())) {
+                        Node node = getModel().getElementAt(index);
+                        if (node != null) {
+                            return NodeDocumentation.getHtmlTooltip(node);
+                        }
+                    }
+                }
+                return null;
+            }
+        };
+        ToolTipManager.sharedInstance().registerComponent(nodeList);
         DoubleClickListener doubleClickListener = new DoubleClickListener();
         nodeList.addMouseListener(doubleClickListener);
         nodeList.addKeyListener(escapeListener);
@@ -186,6 +210,20 @@ public class NodeSelectionDialog extends JDialog {
 
         panel.add(searchField, BorderLayout.NORTH);
         panel.add(centerPanel, BorderLayout.CENTER);
+
+        if (Theme.isDark()) {
+            panel.setBackground(Theme.PANEL_BACKGROUND);
+            centerPanel.setBackground(Theme.PANEL_BACKGROUND);
+            nodeList.setBackground(Theme.NODE_SELECTION_BACKGROUND_COLOR);
+            nodeScroll.getViewport().setBackground(Theme.NODE_SELECTION_BACKGROUND_COLOR);
+            searchField.setBackground(new Color(26, 26, 30));
+            searchField.setForeground(Theme.TEXT_NORMAL_COLOR);
+            searchField.setCaretColor(Theme.TEXT_NORMAL_COLOR);
+            searchField.setBorder(BorderFactory.createCompoundBorder(
+                    BorderFactory.createMatteBorder(0, 0, 1, 0, Theme.SPLIT_PANE_BORDER),
+                    BorderFactory.createEmptyBorder(5, 7, 5, 7)));
+        }
+
         setContentPane(panel);
         setSize(500, 400);
         setLocationRelativeTo(owner);
@@ -334,11 +372,11 @@ public class NodeSelectionDialog extends JDialog {
             Graphics2D g2 = (Graphics2D) g;
             if (selected) {
                 Rectangle clip = g2.getClipBounds();
-                g2.setColor(new java.awt.Color(224, 224, 224));
+                g2.setColor(Theme.isDark() ? Theme.NODE_SELECTION_ACTIVE_BACKGROUND_COLOR : new java.awt.Color(224, 224, 224));
                 g2.fillRect(clip.x, clip.y, clip.width, clip.height);
             }
             g2.setFont(Theme.SMALL_FONT);
-            g2.setColor(Color.BLACK);
+            g2.setColor(Theme.isDark() ? Theme.TEXT_NORMAL_COLOR : Color.BLACK);
             g2.drawString(text, 15, 18);
         }
     }
@@ -350,8 +388,8 @@ public class NodeSelectionDialog extends JDialog {
 
         private CategoryList() {
             super(null);
-            setBackground(new java.awt.Color(244, 244, 244));
-            setBorder(null);
+            setBackground(Theme.isDark() ? new Color(34, 34, 38) : new java.awt.Color(244, 244, 244));
+            setBorder(Theme.isDark() ? BorderFactory.createMatteBorder(0, 0, 0, 1, Theme.SPLIT_PANE_BORDER) : null);
             setOpaque(true);
             setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
         }

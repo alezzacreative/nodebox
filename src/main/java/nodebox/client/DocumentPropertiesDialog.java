@@ -4,6 +4,7 @@ import nodebox.node.Node;
 import nodebox.node.NodeLibrary;
 import nodebox.ui.Borders;
 import nodebox.ui.MessageBar;
+import nodebox.ui.Theme;
 
 import javax.swing.*;
 import javax.swing.event.TableModelEvent;
@@ -42,8 +43,28 @@ public class DocumentPropertiesDialog extends JDialog {
         table.setShowGrid(true);
         table.setBorder(null);
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        boolean dark = Theme.isDark();
+        if (dark) {
+            table.setBackground(new Color(26, 26, 30));
+            table.setForeground(new Color(228, 228, 231));
+            table.setGridColor(new Color(45, 45, 52));
+            table.setSelectionBackground(new Color(63, 63, 70));
+            table.setSelectionForeground(Color.WHITE);
+        } else {
+            table.setBackground(Color.WHITE);
+            table.setForeground(new Color(30, 30, 32));
+            table.setGridColor(new Color(220, 220, 225));
+            table.setSelectionBackground(new Color(210, 225, 245));
+            table.setSelectionForeground(Color.BLACK);
+        }
+        if (table.getTableHeader() != null) {
+            table.getTableHeader().setDefaultRenderer(new nodebox.ui.ThemeTableHeaderUI.ThemeTableHeaderRenderer());
+            table.getTableHeader().setBackground(dark ? new Color(36, 36, 42) : new Color(236, 236, 240));
+            table.getTableHeader().setForeground(dark ? new Color(228, 228, 231) : new Color(30, 30, 32));
+        }
         JScrollPane tableScroll = new JScrollPane(table);
         tableScroll.setBorder(null);
+        tableScroll.getViewport().setBackground(dark ? new Color(26, 26, 30) : Color.WHITE);
 
         properties = new HashMap<String, String>(document.getNodeLibrary().getProperties());
         propertyKeys = new ArrayList<String>(properties.keySet());
@@ -52,7 +73,7 @@ public class DocumentPropertiesDialog extends JDialog {
 
         JPanel buttonPanel = new JPanel();
         buttonPanel.setLayout(new BoxLayout(buttonPanel, BoxLayout.LINE_AXIS));
-        buttonPanel.setBorder(BorderFactory.createEmptyBorder(5, 0, 5, 0));
+        buttonPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
         JButton addButton = new JButton("Add");
         addButton.addActionListener(new ActionListener() {
             @Override
@@ -65,7 +86,6 @@ public class DocumentPropertiesDialog extends JDialog {
             }
         });
         buttonPanel.add(addButton);
-
 
         JButton removeButton = new JButton("Remove");
         removeButton.addActionListener(new ActionListener() {
@@ -104,9 +124,20 @@ public class DocumentPropertiesDialog extends JDialog {
         });
         buttonPanel.add(saveButton);
 
+        // Apply theme styling
+        Color dialogBg = Theme.DIALOG_BACKGROUND;
+        getContentPane().setBackground(dialogBg);
+        mainPanel.setBackground(dialogBg);
+        buttonPanel.setBackground(dialogBg);
+        addButton.setUI(new nodebox.ui.ThemeButtonUI());
+        removeButton.setUI(new nodebox.ui.ThemeButtonUI());
+        cancelButton.setUI(new nodebox.ui.ThemeButtonUI());
+        saveButton.setUI(new nodebox.ui.ThemeButtonUI());
+
         mainPanel.add(buttonPanel, BorderLayout.SOUTH);
 
         setContentPane(mainPanel);
+        getRootPane().setDefaultButton(saveButton);
         setSize(500, 400);
         setMinimumSize(new Dimension(500, 300));
         setLocationRelativeTo(document);

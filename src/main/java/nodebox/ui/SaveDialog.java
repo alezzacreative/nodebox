@@ -51,6 +51,12 @@ public class SaveDialog extends JComponent {
         buttonPanel.add(saveButton);
         contentPanel.add(buttonPanel);
 
+        // Apply theme colors
+        contentPanel.setBackground(Theme.DIALOG_BACKGROUND);
+        buttonPanel.setBackground(Theme.DIALOG_BACKGROUND);
+        messageLabel.setForeground(Theme.TEXT_NORMAL_COLOR);
+        infoLabel.setForeground(Theme.TEXT_HEADER_COLOR);
+
         //add(iconLabel, BorderLayout.WEST);
         add(contentPanel, BorderLayout.CENTER);
 
@@ -60,6 +66,7 @@ public class SaveDialog extends JComponent {
     public int show(JFrame frame) {
         dialog = new JDialog(frame, "Save Changes", true);
         Container contentPane = dialog.getContentPane();
+        contentPane.setBackground(Theme.DIALOG_BACKGROUND);
         contentPane.setLayout(new BorderLayout());
         contentPane.add(this, BorderLayout.CENTER);
         dialog.setResizable(false);

@@ -1,5 +1,7 @@
 package nodebox.client;
 
+import nodebox.ui.Theme;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -10,6 +12,8 @@ import java.util.prefs.Preferences;
 public class PreferencesDialog extends JDialog {
 
     private Preferences preferences;
+    private JComboBox<String> themeComboBox;
+    private JComboBox<String> cableStyleComboBox;
 
     public PreferencesDialog() {
         super((Frame) null, "Preferences");
@@ -18,8 +22,26 @@ public class PreferencesDialog extends JDialog {
         rootPanel.setLayout(new BoxLayout(rootPanel, BoxLayout.Y_AXIS));
         rootPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        JLabel label = new JLabel("<html><i>No preferences yet.</i></html>");
-        rootPanel.add(label);
+        JLabel appearance = new JLabel("Appearance");
+        appearance.setFont(new Font(Font.DIALOG, Font.BOLD, 13));
+        appearance.setAlignmentX(Component.LEFT_ALIGNMENT);
+        rootPanel.add(appearance);
+
+        JPanel themePanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 5));
+        themePanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        JLabel themeLabel = new JLabel("Theme: ");
+        themeComboBox = new JComboBox<String>(new String[]{"Light", "Dark"});
+        themePanel.add(themeLabel);
+        themePanel.add(themeComboBox);
+        rootPanel.add(themePanel);
+
+        JPanel cablePanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 5));
+        cablePanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        JLabel cableLabel = new JLabel("Cable Style: ");
+        cableStyleComboBox = new JComboBox<String>(new String[]{"Curved", "Straight", "Orthogonal"});
+        cablePanel.add(cableLabel);
+        cablePanel.add(cableStyleComboBox);
+        rootPanel.add(cablePanel);
 
         rootPanel.add(Box.createVerticalStrut(10));
 
@@ -31,7 +53,6 @@ public class PreferencesDialog extends JDialog {
             }
         });
         buttonPanel.add(cancelButton);
-        rootPanel.add(buttonPanel);
         JButton saveButton = new JButton("Save");
         saveButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent actionEvent) {
@@ -39,7 +60,21 @@ public class PreferencesDialog extends JDialog {
             }
         });
         buttonPanel.add(saveButton);
+        rootPanel.add(buttonPanel);
         getRootPane().setDefaultButton(saveButton);
+
+        Color dialogBg = Theme.DIALOG_BACKGROUND;
+        rootPanel.setBackground(dialogBg);
+        themePanel.setBackground(dialogBg);
+        cablePanel.setBackground(dialogBg);
+        buttonPanel.setBackground(dialogBg);
+        appearance.setForeground(Theme.TEXT_NORMAL_COLOR);
+        themeLabel.setForeground(Theme.TEXT_NORMAL_COLOR);
+        cableLabel.setForeground(Theme.TEXT_NORMAL_COLOR);
+        themeComboBox.setUI(new nodebox.ui.ThemeComboBoxUI());
+        cableStyleComboBox.setUI(new nodebox.ui.ThemeComboBoxUI());
+        cancelButton.setUI(new nodebox.ui.ThemeButtonUI());
+        saveButton.setUI(new nodebox.ui.ThemeButtonUI());
 
         readPreferences();
 
@@ -50,6 +85,20 @@ public class PreferencesDialog extends JDialog {
 
     private void readPreferences() {
         this.preferences = Preferences.userNodeForPackage(Application.class);
+        String currentTheme = preferences.get(Application.PREFERENCE_THEME, Application.THEME_LIGHT);
+        if (Application.THEME_DARK.equalsIgnoreCase(currentTheme)) {
+            themeComboBox.setSelectedItem("Dark");
+        } else {
+            themeComboBox.setSelectedItem("Light");
+        }
+        String currentCable = Application.getInstance() != null ? Application.getInstance().getCableStyle() : preferences.get(Application.PREFERENCE_CABLE_STYLE, Application.CABLE_STYLE_CURVED);
+        if (Application.CABLE_STYLE_STRAIGHT.equalsIgnoreCase(currentCable)) {
+            cableStyleComboBox.setSelectedItem("Straight");
+        } else if (Application.CABLE_STYLE_ORTHOGONAL.equalsIgnoreCase(currentCable)) {
+            cableStyleComboBox.setSelectedItem("Orthogonal");
+        } else {
+            cableStyleComboBox.setSelectedItem("Curved");
+        }
     }
 
     public void doCancel() {
@@ -57,8 +106,26 @@ public class PreferencesDialog extends JDialog {
     }
 
     public void doSave() {
-        // TODO Re-enable this when there are actual preferences.
-        // JOptionPane.showMessageDialog(this, "Please restart NodeBox for the changes to take effect.");
+        String selectedTheme = "Dark".equals(themeComboBox.getSelectedItem()) ? Application.THEME_DARK : Application.THEME_LIGHT;
+        preferences.put(Application.PREFERENCE_THEME, selectedTheme);
+        if (Application.getInstance() != null) {
+            Application.getInstance().applyTheme(selectedTheme);
+        } else {
+            Theme.setTheme(selectedTheme);
+        }
+
+        String selectedCableStyle = Application.CABLE_STYLE_CURVED;
+        if ("Straight".equals(cableStyleComboBox.getSelectedItem())) {
+            selectedCableStyle = Application.CABLE_STYLE_STRAIGHT;
+        } else if ("Orthogonal".equals(cableStyleComboBox.getSelectedItem())) {
+            selectedCableStyle = Application.CABLE_STYLE_ORTHOGONAL;
+        }
+        if (Application.getInstance() != null) {
+            Application.getInstance().setCableStyle(selectedCableStyle);
+        } else {
+            preferences.put(Application.PREFERENCE_CABLE_STYLE, selectedCableStyle);
+        }
+
         try {
             preferences.flush();
         } catch (BackingStoreException e) {

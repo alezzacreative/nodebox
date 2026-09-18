@@ -6,6 +6,7 @@ import com.google.common.collect.Iterables;
 import nodebox.graphics.Point;
 import nodebox.util.Geometry;
 import nodebox.util.MathUtils;
+import nodebox.util.SimplexNoise;
 import nodebox.util.waves.*;
 
 import java.util.*;
@@ -37,7 +38,7 @@ public class MathFunctions {
                 "makeNumbers", "randomNumbers", "round",
                 "sample", "range",
                 "radians", "degrees", "angle", "distance", "coordinates", "reflect", "sin", "cos", "pi", "e",
-                "convertRange", "wave");
+                "convertRange", "wave", "expression", "noise", "spring");
     }
 
     public static double number(double n) {
@@ -404,6 +405,169 @@ public class MathFunctions {
         else
             wave = SineWave.from(fmin, fmax, fperiod);
         return wave.getValueAt((float) offset);
+    }
+
+    public static double expression(String expression, double x, double y, double z, double t) {
+        if (expression == null || expression.trim().isEmpty()) return 0.0;
+        try {
+            return new ExpressionParser(expression, x, y, z, t).parse();
+        } catch (Exception e) {
+            return 0.0;
+        }
+    }
+
+    public static class ExpressionParser {
+        private final String str;
+        private int pos = -1, ch;
+        private final double x, y, z, t;
+
+        public ExpressionParser(String str, double x, double y, double z, double t) {
+            this.str = str;
+            this.x = x;
+            this.y = y;
+            this.z = z;
+            this.t = t;
+        }
+
+        private void nextChar() {
+            ch = (++pos < str.length()) ? str.charAt(pos) : -1;
+        }
+
+        private boolean eat(int charToEat) {
+            while (ch == ' ' || ch == '\t' || ch == '\r' || ch == '\n') nextChar();
+            if (ch == charToEat) {
+                nextChar();
+                return true;
+            }
+            return false;
+        }
+
+        public double parse() {
+            nextChar();
+            return parseExpression();
+        }
+
+        private double parseExpression() {
+            double v = parseTerm();
+            for (;;) {
+                if (eat('+')) v += parseTerm();
+                else if (eat('-')) v -= parseTerm();
+                else return v;
+            }
+        }
+
+        private double parseTerm() {
+            double v = parseFactor();
+            for (;;) {
+                if (eat('*')) v *= parseFactor();
+                else if (eat('/')) {
+                    double d = parseFactor();
+                    v = (d != 0) ? v / d : 0.0;
+                } else if (eat('%')) {
+                    double d = parseFactor();
+                    v = (d != 0) ? v % d : 0.0;
+                } else return v;
+            }
+        }
+
+        private double parseFactor() {
+            double v = parseBase();
+            if (eat('^')) {
+                v = Math.pow(v, parseFactor());
+            }
+            return v;
+        }
+
+        private double parseBase() {
+            while (ch == ' ' || ch == '\t' || ch == '\r' || ch == '\n') nextChar();
+            if (eat('+')) return parseBase();
+            if (eat('-')) return -parseBase();
+
+            double v;
+            int startPos = this.pos;
+            if (eat('(')) {
+                v = parseExpression();
+                eat(')');
+            } else if ((ch >= '0' && ch <= '9') || ch == '.') {
+                while ((ch >= '0' && ch <= '9') || ch == '.' || ch == 'e' || ch == 'E') nextChar();
+                try {
+                    v = Double.parseDouble(str.substring(startPos, this.pos));
+                } catch (Exception e) {
+                    v = 0.0;
+                }
+            } else if (Character.isLetter(ch) || ch == '_') {
+                while (Character.isLetterOrDigit(ch) || ch == '_') nextChar();
+                String name = str.substring(startPos, this.pos).toLowerCase(Locale.US);
+                if (eat('(')) {
+                    java.util.List<Double> args = new java.util.ArrayList<Double>();
+                    if (!eat(')')) {
+                        do {
+                            args.add(parseExpression());
+                        } while (eat(','));
+                        eat(')');
+                    }
+                    v = evalFunc(name, args);
+                } else {
+                    if ("x".equals(name)) v = x;
+                    else if ("y".equals(name)) v = y;
+                    else if ("z".equals(name)) v = z;
+                    else if ("t".equals(name)) v = t;
+                    else if ("pi".equals(name)) v = Math.PI;
+                    else if ("e".equals(name)) v = Math.E;
+                    else v = 0.0;
+                }
+            } else {
+                v = 0.0;
+            }
+            return v;
+        }
+
+        private double evalFunc(String func, java.util.List<Double> args) {
+            double a0 = args.size() > 0 ? args.get(0) : 0.0;
+            double a1 = args.size() > 1 ? args.get(1) : 0.0;
+            double a2 = args.size() > 2 ? args.get(2) : 0.0;
+
+            if ("sin".equals(func)) return Math.sin(a0);
+            if ("cos".equals(func)) return Math.cos(a0);
+            if ("tan".equals(func)) return Math.tan(a0);
+            if ("asin".equals(func)) return Math.asin(a0);
+            if ("acos".equals(func)) return Math.acos(a0);
+            if ("atan".equals(func)) return Math.atan(a0);
+            if ("atan2".equals(func)) return Math.atan2(a0, a1);
+            if ("sqrt".equals(func)) return a0 >= 0 ? Math.sqrt(a0) : 0.0;
+            if ("cbrt".equals(func)) return Math.cbrt(a0);
+            if ("abs".equals(func)) return Math.abs(a0);
+            if ("floor".equals(func)) return Math.floor(a0);
+            if ("ceil".equals(func)) return Math.ceil(a0);
+            if ("round".equals(func)) return Math.round(a0);
+            if ("log".equals(func)) return a0 > 0 ? Math.log(a0) : 0.0;
+            if ("exp".equals(func)) return Math.exp(a0);
+            if ("pow".equals(func)) return Math.pow(a0, a1);
+            if ("min".equals(func)) return Math.min(a0, a1);
+            if ("max".equals(func)) return Math.max(a0, a1);
+            if ("clamp".equals(func)) return Math.max(a1, Math.min(a2, a0));
+            if ("radians".equals(func)) return Math.toRadians(a0);
+            if ("degrees".equals(func)) return Math.toDegrees(a0);
+            if ("noise".equals(func)) return args.size() > 2 ? SimplexNoise.simplex3D(a0, a1, a2) : SimplexNoise.simplex2D(a0, a1);
+            return 0.0;
+        }
+    }
+
+    public static double noise(double x, double y, double z, String type, long octaves, double roughness) {
+        return SimplexNoise.fbm(x, y, z, type, (int) octaves, roughness);
+    }
+
+    public static double spring(double current, double target, double velocity, double tension, double damping, double mass) {
+        mass = Math.max(0.01, mass);
+        tension = Math.max(0.0, tension);
+        damping = Math.max(0.0, damping);
+        double dt = 1.0 / 60.0;
+        double displacement = target - current;
+        double springForce = tension * displacement;
+        double dampingForce = -damping * velocity;
+        double acceleration = (springForce + dampingForce) / mass;
+        double newVelocity = velocity + acceleration * dt;
+        return current + newVelocity * dt;
     }
 
 }

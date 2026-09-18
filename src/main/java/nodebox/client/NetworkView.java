@@ -56,6 +56,7 @@ public class NetworkView extends ZoomableView implements PaneView, Zoom {
 
     public static final Map<String, Color> PORT_COLORS = Maps.newHashMap();
     public static final Color DEFAULT_PORT_COLOR = new Color(52, 85, 52);
+    public static final Color OUTPUT_PORT_COLOR = new Color(0x22, 0xB1, 0x4C);
     public static final Color PORT_HOVER_COLOR = Color.YELLOW;
     public static final Color TOOLTIP_BACKGROUND_COLOR = new Color(254, 255, 215);
     public static final Color TOOLTIP_STROKE_COLOR = Color.DARK_GRAY;
@@ -90,6 +91,11 @@ public class NetworkView extends ZoomableView implements PaneView, Zoom {
     private boolean startDragging;
     private Point2D dragStartPoint;
     private Point2D dragCurrentPoint;
+    private Point lastMousePoint = null;
+    private boolean showProfiler = false;
+    private Map<String, Long> executionTimes = new HashMap<String, Long>();
+    private Rectangle miniMapBounds = new Rectangle();
+    private boolean showMiniMap = true;
 
     static {
         try {
@@ -190,13 +196,51 @@ public class NetworkView extends ZoomableView implements PaneView, Zoom {
         addMouseListener(mh);
         addMouseMotionListener(mh);
         addFocusListener(new FocusHandler());
+        ToolTipManager.sharedInstance().registerComponent(this);
+    }
+
+    @Override
+    public String getToolTipText(MouseEvent e) {
+        Point2D pt = inverseViewTransformPoint(e.getPoint());
+        Node node = getNodeAt(pt);
+        if (node != null) {
+            return NodeDocumentation.getHtmlTooltip(node);
+        }
+        return null;
     }
 
     private void initMenus() {
         networkMenu = new JPopupMenu();
         networkMenu.add(new NewNodeAction());
+        networkMenu.add(new AbstractAction("Quick Add Node (Tab)") {
+            public void actionPerformed(ActionEvent e) {
+                Point pt = lastMousePoint != null ? lastMousePoint : new Point(getWidth() / 2, getHeight() / 2);
+                Point gridPoint = pointToGridPoint(pt);
+                Point screenPoint = null;
+                try {
+                    Point pOnScreen = getLocationOnScreen();
+                    screenPoint = new Point(pOnScreen.x + pt.x, pOnScreen.y + pt.y);
+                } catch (Exception ex) {
+                    screenPoint = pt;
+                }
+                getDocument().showQuickAddDialog(gridPoint, screenPoint);
+            }
+        });
         networkMenu.add(new ResetViewAction());
+        networkMenu.add(new AbstractAction("Zoom to Fit (F)") {
+            public void actionPerformed(ActionEvent e) {
+                zoomToFit();
+            }
+        });
         networkMenu.add(new GoUpAction());
+        networkMenu.addSeparator();
+        networkMenu.add(new AbstractAction(showProfiler ? "Hide Node Profiler (P)" : "Show Node Profiler (P)") {
+            public void actionPerformed(ActionEvent e) {
+                showProfiler = !showProfiler;
+                repaint();
+            }
+        });
+        Theme.applyPopupMenuTheme(networkMenu);
     }
 
     private JPopupMenu createNodeMenu(Node node) {
@@ -216,7 +260,51 @@ public class NetworkView extends ZoomableView implements PaneView, Zoom {
             menu.add(new RemoveCommentAction());
         }
 
+        if (selectedNodes.size() > 1) {
+            menu.addSeparator();
+            JMenu alignMenu = new JMenu("Align");
+            alignMenu.add(new JMenuItem(new AbstractAction("Align Left") {
+                public void actionPerformed(ActionEvent e) { alignSelectedNodes("left"); }
+            }));
+            alignMenu.add(new JMenuItem(new AbstractAction("Align Right") {
+                public void actionPerformed(ActionEvent e) { alignSelectedNodes("right"); }
+            }));
+            alignMenu.add(new JMenuItem(new AbstractAction("Align Center Horizontally") {
+                public void actionPerformed(ActionEvent e) { alignSelectedNodes("center-x"); }
+            }));
+            alignMenu.add(new JMenuItem(new AbstractAction("Align Top") {
+                public void actionPerformed(ActionEvent e) { alignSelectedNodes("top"); }
+            }));
+            alignMenu.add(new JMenuItem(new AbstractAction("Align Bottom") {
+                public void actionPerformed(ActionEvent e) { alignSelectedNodes("bottom"); }
+            }));
+            alignMenu.add(new JMenuItem(new AbstractAction("Align Center Vertically") {
+                public void actionPerformed(ActionEvent e) { alignSelectedNodes("center-y"); }
+            }));
+            menu.add(alignMenu);
+
+            if (selectedNodes.size() > 2) {
+                JMenu distributeMenu = new JMenu("Distribute");
+                distributeMenu.add(new JMenuItem(new AbstractAction("Distribute Horizontally") {
+                    public void actionPerformed(ActionEvent e) { distributeSelectedNodes("horizontal"); }
+                }));
+                distributeMenu.add(new JMenuItem(new AbstractAction("Distribute Vertically") {
+                    public void actionPerformed(ActionEvent e) { distributeSelectedNodes("vertical"); }
+                }));
+                menu.add(distributeMenu);
+            }
+        }
+
+        menu.addSeparator();
+        menu.add(new AbstractAction(showProfiler ? "Hide Node Profiler (P)" : "Show Node Profiler (P)") {
+            public void actionPerformed(ActionEvent e) {
+                showProfiler = !showProfiler;
+                repaint();
+            }
+        });
+
         menu.add(new HelpAction());
+        Theme.applyPopupMenuTheme(menu);
         return menu;
     }
 
@@ -305,6 +393,137 @@ public class NetworkView extends ZoomableView implements PaneView, Zoom {
 
         // Restore original transform
         g2.setTransform(originalTransform);
+
+        if (showMiniMap) {
+            paintMiniMap(g2);
+        }
+    }
+
+    private void paintMiniMap(Graphics2D g) {
+        java.util.Collection<Node> nodes = getNodes();
+        if (nodes.isEmpty()) return;
+
+        int mapW = 160;
+        int mapH = 110;
+        int mapMargin = 15;
+        int mapX = getWidth() - mapW - mapMargin;
+        int mapY = getHeight() - mapH - mapMargin;
+        miniMapBounds.setBounds(mapX, mapY, mapW, mapH);
+
+        // Compute network bounding box
+        double minX = Double.MAX_VALUE, maxX = -Double.MAX_VALUE;
+        double minY = Double.MAX_VALUE, maxY = -Double.MAX_VALUE;
+        for (Node n : nodes) {
+            nodebox.graphics.Point pt = n.getPosition();
+            double nx = pt.x * GRID_CELL_SIZE;
+            double ny = pt.y * GRID_CELL_SIZE;
+            if (nx < minX) minX = nx;
+            if (nx + NODE_WIDTH > maxX) maxX = nx + NODE_WIDTH;
+            if (ny < minY) minY = ny;
+            if (ny + NODE_HEIGHT > maxY) maxY = ny + NODE_HEIGHT;
+        }
+
+        Point2D viewTopLeft = inverseViewTransformPoint(new Point(0, 0));
+        Point2D viewBottomRight = inverseViewTransformPoint(new Point(getWidth(), getHeight()));
+        if (viewTopLeft.getX() < minX) minX = viewTopLeft.getX();
+        if (viewBottomRight.getX() > maxX) maxX = viewBottomRight.getX();
+        if (viewTopLeft.getY() < minY) minY = viewTopLeft.getY();
+        if (viewBottomRight.getY() > maxY) maxY = viewBottomRight.getY();
+
+        double pad = 60.0;
+        minX -= pad; minY -= pad;
+        maxX += pad; maxY += pad;
+        double spanX = Math.max(1.0, maxX - minX);
+        double spanY = Math.max(1.0, maxY - minY);
+
+        double scale = Math.min((mapW - 16) / spanX, (mapH - 16) / spanY);
+        double offsetX = mapX + 8 + ((mapW - 16) - spanX * scale) / 2.0;
+        double offsetY = mapY + 8 + ((mapH - 16) - spanY * scale) / 2.0;
+
+        // Draw translucent dark card
+        g.setColor(new Color(24, 26, 32, 215));
+        g.fillRoundRect(mapX, mapY, mapW, mapH, 10, 10);
+        g.setColor(new Color(65, 70, 85, 180));
+        g.setStroke(new BasicStroke(1f));
+        g.drawRoundRect(mapX, mapY, mapW, mapH, 10, 10);
+
+        // Draw nodes as dots
+        Node renderedNode = getActiveNetwork().getRenderedChild();
+        for (Node n : nodes) {
+            nodebox.graphics.Point pt = n.getPosition();
+            double nx = pt.x * GRID_CELL_SIZE;
+            double ny = pt.y * GRID_CELL_SIZE;
+            int dotX = (int) Math.round(offsetX + (nx - minX) * scale);
+            int dotY = (int) Math.round(offsetY + (ny - minY) * scale);
+            int dotW = Math.max(3, (int) Math.round(NODE_WIDTH * scale));
+            int dotH = Math.max(2, (int) Math.round(NODE_HEIGHT * scale));
+
+            if (isSelected(n)) {
+                g.setColor(new Color(249, 115, 22)); // Orange highlight
+            } else if (n == renderedNode) {
+                g.setColor(new Color(34, 197, 94)); // Green highlight
+            } else {
+                g.setColor(new Color(148, 163, 184)); // Slate light gray
+            }
+            g.fillRoundRect(dotX, dotY, dotW, dotH, 2, 2);
+        }
+
+        // Draw current viewport rectangle
+        int vpX = (int) Math.round(offsetX + (viewTopLeft.getX() - minX) * scale);
+        int vpY = (int) Math.round(offsetY + (viewTopLeft.getY() - minY) * scale);
+        int vpW = (int) Math.round((viewBottomRight.getX() - viewTopLeft.getX()) * scale);
+        int vpH = (int) Math.round((viewBottomRight.getY() - viewTopLeft.getY()) * scale);
+
+        g.setColor(new Color(56, 189, 248, 40));
+        g.fillRect(vpX, vpY, vpW, vpH);
+        g.setColor(new Color(56, 189, 248, 220));
+        g.setStroke(new BasicStroke(1.2f));
+        g.drawRect(vpX, vpY, vpW, vpH);
+
+        // Mini-map badge
+        g.setFont(new Font("SansSerif", Font.PLAIN, 9));
+        g.setColor(new Color(148, 163, 184, 180));
+        g.drawString("RADAR", mapX + 8, mapY + 12);
+    }
+
+    private void handleMiniMapClick(Point clickPt) {
+        java.util.Collection<Node> nodes = getNodes();
+        if (nodes.isEmpty() || miniMapBounds.isEmpty()) return;
+
+        double minX = Double.MAX_VALUE, maxX = -Double.MAX_VALUE;
+        double minY = Double.MAX_VALUE, maxY = -Double.MAX_VALUE;
+        for (Node n : nodes) {
+            nodebox.graphics.Point pt = n.getPosition();
+            double nx = pt.x * GRID_CELL_SIZE;
+            double ny = pt.y * GRID_CELL_SIZE;
+            if (nx < minX) minX = nx;
+            if (nx + NODE_WIDTH > maxX) maxX = nx + NODE_WIDTH;
+            if (ny < minY) minY = ny;
+            if (ny + NODE_HEIGHT > maxY) maxY = ny + NODE_HEIGHT;
+        }
+        Point2D viewTopLeft = inverseViewTransformPoint(new Point(0, 0));
+        Point2D viewBottomRight = inverseViewTransformPoint(new Point(getWidth(), getHeight()));
+        if (viewTopLeft.getX() < minX) minX = viewTopLeft.getX();
+        if (viewBottomRight.getX() > maxX) maxX = viewBottomRight.getX();
+        if (viewTopLeft.getY() < minY) minY = viewTopLeft.getY();
+        if (viewBottomRight.getY() > maxY) maxY = viewBottomRight.getY();
+
+        double pad = 60.0;
+        minX -= pad; minY -= pad;
+        maxX += pad; maxY += pad;
+        double spanX = Math.max(1.0, maxX - minX);
+        double spanY = Math.max(1.0, maxY - minY);
+
+        double scale = Math.min((miniMapBounds.width - 16) / spanX, (miniMapBounds.height - 16) / spanY);
+        double offsetX = miniMapBounds.x + 8 + ((miniMapBounds.width - 16) - spanX * scale) / 2.0;
+        double offsetY = miniMapBounds.y + 8 + ((miniMapBounds.height - 16) - spanY * scale) / 2.0;
+
+        double targetNetX = minX + (clickPt.x - offsetX) / scale;
+        double targetNetY = minY + (clickPt.y - offsetY) / scale;
+
+        double newViewX = getWidth() / 2.0 - targetNetX * getViewScale();
+        double newViewY = getHeight() / 2.0 - targetNetY * getViewScale();
+        setViewTransform(newViewX, newViewY, getViewScale());
     }
 
     private void paintGrid(Graphics2D g) {
@@ -340,7 +559,7 @@ public class NetworkView extends ZoomableView implements PaneView, Zoom {
         g.setColor(portTypeColor(outputNode.getOutputType()));
         Rectangle outputRect = nodeRect(outputNode);
         Rectangle inputRect = nodeRect(inputNode);
-        paintConnectionLine(g, outputRect.x + 4, outputRect.y + outputRect.height + 1, inputRect.x + portOffset(inputNode, inputPort) + 4, inputRect.y - 4);
+        paintConnectionLine(g, outputRect.x + 4, outputRect.y + outputRect.height + 1, inputRect.x + portOffset(inputNode, inputPort) + getPortWidth(inputNode) / 2, inputRect.y - 4);
 
     }
 
@@ -354,15 +573,28 @@ public class NetworkView extends ZoomableView implements PaneView, Zoom {
     }
 
     private static void paintConnectionLine(Graphics2D g, int x0, int y0, int x1, int y1) {
-        double dy = Math.abs(y1 - y0);
-        if (dy < GRID_CELL_SIZE) {
+        String cableStyle = Application.getInstance() != null ? Application.getInstance().getCableStyle() : Application.CABLE_STYLE_CURVED;
+        if (Application.CABLE_STYLE_STRAIGHT.equals(cableStyle)) {
             g.drawLine(x0, y0, x1, y1);
-        } else {
-            double halfDx = Math.abs(x1 - x0) / 2.0;
+        } else if (Application.CABLE_STYLE_ORTHOGONAL.equals(cableStyle)) {
+            int yMid = (y0 + y1) / 2;
             GeneralPath p = new GeneralPath();
             p.moveTo(x0, y0);
-            p.curveTo(x0, y0 + halfDx, x1, y1 - halfDx, x1, y1);
+            p.lineTo(x0, yMid);
+            p.lineTo(x1, yMid);
+            p.lineTo(x1, y1);
             g.draw(p);
+        } else {
+            double dy = Math.abs(y1 - y0);
+            if (dy < GRID_CELL_SIZE) {
+                g.drawLine(x0, y0, x1, y1);
+            } else {
+                double halfDx = Math.abs(x1 - x0) / 2.0;
+                GeneralPath p = new GeneralPath();
+                p.moveTo(x0, y0);
+                p.curveTo(x0, y0 + halfDx, x1, y1 - halfDx, x1, y1);
+                g.draw(p);
+            }
         }
     }
 
@@ -384,9 +616,43 @@ public class NetworkView extends ZoomableView implements PaneView, Zoom {
         }
     }
 
+    private static final Map<BufferedImage, BufferedImage> invertedImageCache = new java.util.WeakHashMap<BufferedImage, BufferedImage>();
+
+    public static BufferedImage getInvertedImage(BufferedImage src) {
+        if (src == null) return null;
+        synchronized (invertedImageCache) {
+            BufferedImage inverted = invertedImageCache.get(src);
+            if (inverted != null) return inverted;
+            int width = src.getWidth();
+            int height = src.getHeight();
+            inverted = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+            for (int y = 0; y < height; y++) {
+                for (int x = 0; x < width; x++) {
+                    int rgba = src.getRGB(x, y);
+                    int a = (rgba >> 24) & 0xff;
+                    int r = 255 - ((rgba >> 16) & 0xff);
+                    int g = 255 - ((rgba >> 8) & 0xff);
+                    int b = 255 - (rgba & 0xff);
+                    inverted.setRGB(x, y, (a << 24) | (r << 16) | (g << 8) | b);
+                }
+            }
+            invertedImageCache.put(src, inverted);
+            return inverted;
+        }
+    }
+
+    public static Color invertColor(Color c) {
+        if (c == null) return null;
+        return new Color(255 - c.getRed(), 255 - c.getGreen(), 255 - c.getBlue(), c.getAlpha());
+    }
+
     public static Color portTypeColor(String type) {
         Color portColor = PORT_COLORS.get(type);
-        return portColor == null ? DEFAULT_PORT_COLOR : portColor;
+        if (portColor == null) portColor = DEFAULT_PORT_COLOR;
+        if (Theme.isDark()) {
+            return invertColor(portColor);
+        }
+        return portColor;
     }
 
     private static String getShortenedName(String name, int startChars) {
@@ -402,15 +668,18 @@ public class NetworkView extends ZoomableView implements PaneView, Zoom {
     private void paintNode(Graphics2D g, Node network, Node node, BufferedImage icon, BufferedImage commentIcon, boolean selected, boolean rendered, Node connectionOutput, Port hoverInputPort, boolean hoverOutput) {
         Rectangle r = nodeRect(node);
         String outputType = node.getOutputType();
+        Color nodeColor = portTypeColor(outputType);
+        double luminance = (0.299 * nodeColor.getRed() + 0.587 * nodeColor.getGreen() + 0.114 * nodeColor.getBlue());
+        boolean lightNode = luminance > 130;
 
         // Draw selection ring
         if (selected) {
-            g.setColor(Color.WHITE);
+            g.setColor(Theme.isDark() ? new Color(56, 189, 248) : Color.WHITE);
             g.fillRect(r.x, r.y, NODE_WIDTH, NODE_HEIGHT);
         }
 
         // Draw node
-        g.setColor(portTypeColor(outputType));
+        g.setColor(nodeColor);
         if (selected) {
             g.fillRect(r.x + 2, r.y + 2, NODE_WIDTH - 4, NODE_HEIGHT - 4);
         } else {
@@ -419,7 +688,7 @@ public class NetworkView extends ZoomableView implements PaneView, Zoom {
 
         // Draw render flag
         if (rendered) {
-            g.setColor(Color.WHITE);
+            g.setColor(lightNode ? new Color(24, 24, 27) : Color.WHITE);
             GeneralPath gp = new GeneralPath();
             gp.moveTo(r.x + NODE_WIDTH - 2, r.y + NODE_HEIGHT - 20);
             gp.lineTo(r.x + NODE_WIDTH - 2, r.y + NODE_HEIGHT - 2);
@@ -429,11 +698,12 @@ public class NetworkView extends ZoomableView implements PaneView, Zoom {
 
         // Draw input ports
         g.setColor(Color.WHITE);
-        int portX = 0;
+        int pw = getPortWidth(node);
         for (Port input : node.getInputs()) {
             if (isHiddenPort(input)) {
                 continue;
             }
+            int portX = portOffset(node, input);
             if (hoverInputPort == input) {
                 g.setColor(PORT_HOVER_COLOR);
             } else {
@@ -457,32 +727,59 @@ public class NetworkView extends ZoomableView implements PaneView, Zoom {
                 Point2D topLeft = inverseViewTransformPoint(new Point(4, 0));
                 g.setColor(portTypeColor(input.getType()));
                 g.setStroke(CONNECTION_STROKE);
-                paintConnectionLine(g, (int) topLeft.getX(), (int) topLeft.getY(), r.x + portX + 4, r.y - 2);
+                paintConnectionLine(g, (int) topLeft.getX(), (int) topLeft.getY(), r.x + portX + pw / 2, r.y - 2);
             }
 
-            g.fillRect(r.x + portX, r.y - portHeight, PORT_WIDTH, portHeight);
-
-
-            portX += PORT_WIDTH + PORT_SPACING;
+            g.fillRect(r.x + portX, r.y - portHeight, pw, portHeight);
         }
 
-        // Draw output port
+        // Draw output port in green #22B14C
         if (hoverOutput && connectionOutput == null) {
             g.setColor(PORT_HOVER_COLOR);
         } else {
-            g.setColor(portTypeColor(outputType));
+            g.setColor(OUTPUT_PORT_COLOR);
         }
         g.fillRect(r.x, r.y + NODE_HEIGHT, PORT_WIDTH, PORT_HEIGHT);
 
         // Draw icon
-        g.drawImage(icon, r.x + NODE_PADDING, r.y + NODE_PADDING, NODE_ICON_SIZE, NODE_ICON_SIZE, null);
-        g.setColor(Color.WHITE);
+        BufferedImage drawIcon = lightNode ? getInvertedImage(icon) : icon;
+        g.drawImage(drawIcon, r.x + NODE_PADDING, r.y + NODE_PADDING, NODE_ICON_SIZE, NODE_ICON_SIZE, null);
+        g.setColor(lightNode ? new Color(24, 24, 27) : Color.WHITE);
         g.setFont(Theme.NETWORK_FONT);
         g.drawString(getShortenedName(node.getName(), 7), r.x + NODE_ICON_SIZE + NODE_PADDING * 2 + 2, r.y + 22);
 
         // Draw comment icon
         if (node.hasComment()) {
-            g.drawImage(commentIcon, r.x + NODE_WIDTH - 13, r.y + 5, null);
+            BufferedImage drawComment = lightNode ? getInvertedImage(commentIcon) : commentIcon;
+            g.drawImage(drawComment, r.x + NODE_WIDTH - 13, r.y + 5, null);
+        }
+
+        // Draw profiler badge if enabled
+        if (showProfiler) {
+            String nodePath = Node.path(document.getActiveNetworkPath(), node);
+            Long timeNanos = executionTimes != null ? executionTimes.get(nodePath) : null;
+            if (timeNanos != null) {
+                double ms = timeNanos / 1000000.0;
+                String badge = ms < 0.1 ? "<0.1ms" : String.format(java.util.Locale.US, "%.1fms", ms);
+                Color badgeBg;
+                if (ms < 1.0) {
+                    badgeBg = new Color(16, 185, 129, 210); // Emerald
+                } else if (ms < 10.0) {
+                    badgeBg = new Color(245, 158, 11, 220); // Amber
+                } else {
+                    badgeBg = new Color(239, 68, 68, 230); // Red
+                }
+                g.setFont(new Font("SansSerif", Font.BOLD, 9));
+                FontMetrics fm = g.getFontMetrics();
+                int bw = fm.stringWidth(badge) + 6;
+                int bh = fm.getHeight();
+                int bx = r.x + NODE_WIDTH - bw - 2;
+                int by = r.y + NODE_HEIGHT - bh - 2;
+                g.setColor(badgeBg);
+                g.fillRoundRect(bx, by, bw, bh, 4, 4);
+                g.setColor(Color.WHITE);
+                g.drawString(badge, bx + 3, by + fm.getAscent() - 1);
+            }
         }
     }
 
@@ -509,12 +806,15 @@ public class NetworkView extends ZoomableView implements PaneView, Zoom {
         int verticalOffset = 10;
         Rectangle r = new Rectangle((int) point.getX(), (int) point.getY() + verticalOffset, textWidth, fontMetrics.getHeight());
         r.grow(4, 3);
-        g.setColor(TOOLTIP_STROKE_COLOR);
+        Color bgColor = Theme.isDark() ? new Color(40, 40, 44) : TOOLTIP_BACKGROUND_COLOR;
+        Color strokeColor = Theme.isDark() ? new Color(80, 80, 86) : TOOLTIP_STROKE_COLOR;
+        Color textColor = Theme.isDark() ? new Color(228, 228, 231) : TOOLTIP_TEXT_COLOR;
+        g.setColor(strokeColor);
         g.drawRoundRect(r.x, r.y, r.width, r.height, 8, 8);
-        g.setColor(TOOLTIP_BACKGROUND_COLOR);
+        g.setColor(bgColor);
         g.fillRoundRect(r.x, r.y, r.width, r.height, 8, 8);
 
-        g.setColor(TOOLTIP_TEXT_COLOR);
+        g.setColor(textColor);
         g.drawString(text, (float) point.getX(), (float) point.getY() + fontMetrics.getAscent() + verticalOffset);
     }
 
@@ -564,7 +864,8 @@ public class NetworkView extends ZoomableView implements PaneView, Zoom {
     private static Rectangle inputPortRect(Node node, Port port, boolean isConnecting) {
         if (isHiddenPort(port)) return new Rectangle();
         Point pt = nodePoint(node);
-        int portWidth = !isConnecting ? PORT_WIDTH : PORT_WIDTH + PORT_MARGIN;
+        int pw = getPortWidth(node);
+        int portWidth = !isConnecting ? pw : pw + PORT_MARGIN;
         int portHeight = !isConnecting ? PORT_HEIGHT : PORT_HEIGHT + NODE_HEIGHT;
         Rectangle portRect = new Rectangle(pt.x + portOffset(node, port), pt.y - PORT_HEIGHT, portWidth, portHeight);
         growHitRectangle(portRect);
@@ -600,9 +901,50 @@ public class NetworkView extends ZoomableView implements PaneView, Zoom {
         return new Point((int) pt.getX() - 1, (int) pt.getY());
     }
 
-    private static int portOffset(Node node, Port port) {
-        int portIndex = node.getInputs().indexOf(port);
-        return (PORT_WIDTH + PORT_SPACING) * portIndex;
+    public static int visibleInputCount(Node node) {
+        if (node == null) return 0;
+        int count = 0;
+        for (Port input : node.getInputs()) {
+            if (!isHiddenPort(input)) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    public static int getPortWidth(Node node) {
+        int count = visibleInputCount(node);
+        if (count <= 1) return PORT_WIDTH;
+        int available = NODE_WIDTH - 4;
+        if (count * (PORT_WIDTH + 2) <= available) {
+            return PORT_WIDTH;
+        }
+        int w = (available / count) - 2;
+        return Math.max(4, Math.min(PORT_WIDTH, w));
+    }
+
+    public static int getPortSpacing(Node node) {
+        int count = visibleInputCount(node);
+        if (count <= 1) return PORT_SPACING;
+        int pw = getPortWidth(node);
+        int totalPw = count * pw;
+        int remaining = (NODE_WIDTH - 4) - totalPw;
+        int spacing = remaining / (count - 1);
+        return Math.max(1, Math.min(PORT_SPACING, spacing));
+    }
+
+    public static int portOffset(Node node, Port port) {
+        if (node == null || port == null) return 0;
+        int visibleIndex = 0;
+        for (Port p : node.getInputs()) {
+            if (p == port) break;
+            if (!isHiddenPort(p)) {
+                visibleIndex++;
+            }
+        }
+        int pw = getPortWidth(node);
+        int spacing = getPortSpacing(node);
+        return 2 + visibleIndex * (pw + spacing);
     }
 
     //// View queries ////
@@ -795,6 +1137,150 @@ public class NetworkView extends ZoomableView implements PaneView, Zoom {
         getDocument().setActiveNetwork(path);
     }
 
+    public void zoomToFit() {
+        Set<Node> targetNodes = Sets.newHashSet(getSelectedNodes());
+        if (targetNodes.isEmpty()) {
+            targetNodes = Sets.newHashSet(getNodes());
+        }
+        if (targetNodes.isEmpty()) {
+            resetViewTransform();
+            return;
+        }
+
+        double minX = Double.POSITIVE_INFINITY;
+        double minY = Double.POSITIVE_INFINITY;
+        double maxX = Double.NEGATIVE_INFINITY;
+        double maxY = Double.NEGATIVE_INFINITY;
+
+        for (Node n : targetNodes) {
+            Rectangle r = nodeRect(n);
+            if (r.x < minX) minX = r.x;
+            if (r.y < minY) minY = r.y;
+            if (r.x + r.width > maxX) maxX = r.x + r.width;
+            if (r.y + r.height > maxY) maxY = r.y + r.height;
+        }
+
+        double boundingWidth = maxX - minX;
+        double boundingHeight = maxY - minY;
+        if (boundingWidth <= 0 || boundingHeight <= 0) {
+            boundingWidth = NODE_WIDTH;
+            boundingHeight = NODE_HEIGHT;
+        }
+
+        double centerX = minX + boundingWidth / 2.0;
+        double centerY = minY + boundingHeight / 2.0;
+
+        int viewW = getWidth();
+        int viewH = getHeight();
+        if (viewW <= 0) viewW = 800;
+        if (viewH <= 0) viewH = 600;
+
+        double padding = 80.0;
+        double availW = Math.max(100.0, viewW - padding * 2);
+        double availH = Math.max(100.0, viewH - padding * 2);
+
+        double scaleX = availW / boundingWidth;
+        double scaleY = availH / boundingHeight;
+        double newScale = Math.min(scaleX, scaleY);
+        newScale = Math.max(MIN_ZOOM, Math.min(1.0, newScale));
+
+        double vx = (viewW / 2.0) - (centerX * newScale);
+        double vy = (viewH / 2.0) - (centerY * newScale);
+        setViewTransform(vx, vy, newScale);
+    }
+
+    public void alignSelectedNodes(String alignment) {
+        Set<Node> selected = Sets.newHashSet(getSelectedNodes());
+        if (selected.size() < 2) return;
+
+        double minX = Double.POSITIVE_INFINITY;
+        double maxX = Double.NEGATIVE_INFINITY;
+        double minY = Double.POSITIVE_INFINITY;
+        double maxY = Double.NEGATIVE_INFINITY;
+
+        for (Node node : selected) {
+            double nx = node.getPosition().getX();
+            double ny = node.getPosition().getY();
+            if (nx < minX) minX = nx;
+            if (nx > maxX) maxX = nx;
+            if (ny < minY) minY = ny;
+            if (ny > maxY) maxY = ny;
+        }
+
+        getDocument().startEdits("Align Nodes");
+        for (Node node : selected) {
+            double currentX = node.getPosition().getX();
+            double currentY = node.getPosition().getY();
+            double targetX = currentX;
+            double targetY = currentY;
+
+            if ("left".equals(alignment)) {
+                targetX = minX;
+            } else if ("right".equals(alignment)) {
+                targetX = maxX;
+            } else if ("center-x".equals(alignment)) {
+                targetX = Math.round((minX + maxX) / 2.0);
+            } else if ("top".equals(alignment)) {
+                targetY = minY;
+            } else if ("bottom".equals(alignment)) {
+                targetY = maxY;
+            } else if ("center-y".equals(alignment)) {
+                targetY = Math.round((minY + maxY) / 2.0);
+            }
+            getDocument().setNodePosition(node, new nodebox.graphics.Point(targetX, targetY));
+        }
+        getDocument().stopEditing();
+        repaint();
+    }
+
+    public void distributeSelectedNodes(String axis) {
+        Set<Node> selected = Sets.newHashSet(getSelectedNodes());
+        if (selected.size() < 3) return;
+
+        java.util.List<Node> sorted = new java.util.ArrayList<Node>(selected);
+        if ("horizontal".equals(axis)) {
+            java.util.Collections.sort(sorted, new java.util.Comparator<Node>() {
+                public int compare(Node a, Node b) {
+                    return Double.compare(a.getPosition().getX(), b.getPosition().getX());
+                }
+            });
+            double x0 = sorted.get(0).getPosition().getX();
+            double xN = sorted.get(sorted.size() - 1).getPosition().getX();
+            double step = (xN - x0) / (sorted.size() - 1);
+            getDocument().startEdits("Distribute Horizontally");
+            for (int i = 1; i < sorted.size() - 1; i++) {
+                Node node = sorted.get(i);
+                double targetX = Math.round(x0 + i * step);
+                getDocument().setNodePosition(node, new nodebox.graphics.Point(targetX, node.getPosition().getY()));
+            }
+            getDocument().stopEditing();
+        } else if ("vertical".equals(axis)) {
+            java.util.Collections.sort(sorted, new java.util.Comparator<Node>() {
+                public int compare(Node a, Node b) {
+                    return Double.compare(a.getPosition().getY(), b.getPosition().getY());
+                }
+            });
+            double y0 = sorted.get(0).getPosition().getY();
+            double yN = sorted.get(sorted.size() - 1).getPosition().getY();
+            double step = (yN - y0) / (sorted.size() - 1);
+            getDocument().startEdits("Distribute Vertically");
+            for (int i = 1; i < sorted.size() - 1; i++) {
+                Node node = sorted.get(i);
+                double targetY = Math.round(y0 + i * step);
+                getDocument().setNodePosition(node, new nodebox.graphics.Point(node.getPosition().getX(), targetY));
+            }
+            getDocument().stopEditing();
+        }
+        repaint();
+    }
+
+    public void setExecutionTimes(Map<String, Long> times) {
+        this.executionTimes = times != null ? times : new HashMap<String, Long>();
+        if (showProfiler) {
+            repaint();
+        }
+    }
+
     //// Input Events ////
 
     private class KeyHandler extends KeyAdapter {
@@ -813,6 +1299,25 @@ public class NetworkView extends ZoomableView implements PaneView, Zoom {
                 isShiftPressed = true;
             } else if (keyCode == KeyEvent.VK_ALT) {
                 isAltPressed = true;
+            } else if (keyCode == KeyEvent.VK_TAB) {
+                Point pt = lastMousePoint != null ? lastMousePoint : new Point(getWidth() / 2, getHeight() / 2);
+                Point gridPoint = pointToGridPoint(pt);
+                Point screenPoint = null;
+                try {
+                    Point pOnScreen = getLocationOnScreen();
+                    screenPoint = new Point(pOnScreen.x + pt.x, pOnScreen.y + pt.y);
+                } catch (Exception ex) {
+                    screenPoint = pt;
+                }
+                getDocument().showQuickAddDialog(gridPoint, screenPoint);
+                e.consume();
+            } else if (keyCode == KeyEvent.VK_F) {
+                zoomToFit();
+                e.consume();
+            } else if (keyCode == KeyEvent.VK_P) {
+                showProfiler = !showProfiler;
+                repaint();
+                e.consume();
             } else if (keyCode == KeyEvent.VK_UP) {
                 moveSelectedNodes(0, -1);
             } else if (keyCode == KeyEvent.VK_RIGHT) {
@@ -837,6 +1342,7 @@ public class NetworkView extends ZoomableView implements PaneView, Zoom {
     private class MouseHandler implements MouseListener, MouseMotionListener {
 
         public void mouseClicked(MouseEvent e) {
+            lastMousePoint = e.getPoint();
             Point2D pt = inverseViewTransformPoint(e.getPoint());
             if (e.getButton() == MouseEvent.BUTTON1) {
                 if (e.getClickCount() == 1) {
@@ -863,6 +1369,11 @@ public class NetworkView extends ZoomableView implements PaneView, Zoom {
         }
 
         public void mousePressed(MouseEvent e) {
+            lastMousePoint = e.getPoint();
+            if (showMiniMap && miniMapBounds.contains(e.getPoint())) {
+                handleMiniMapClick(e.getPoint());
+                return;
+            }
             if (e.isPopupTrigger()) {
                 showPopup(e);
             } else if (isDragTrigger(e)) {
@@ -903,6 +1414,7 @@ public class NetworkView extends ZoomableView implements PaneView, Zoom {
         }
 
         public void mouseReleased(MouseEvent e) {
+            lastMousePoint = e.getPoint();
             if (e.isPopupTrigger()) {
                 showPopup(e);
             } else {
@@ -926,6 +1438,11 @@ public class NetworkView extends ZoomableView implements PaneView, Zoom {
         }
 
         public void mouseDragged(MouseEvent e) {
+            lastMousePoint = e.getPoint();
+            if (showMiniMap && miniMapBounds.contains(e.getPoint())) {
+                handleMiniMapClick(e.getPoint());
+                return;
+            }
             Point2D pt = inverseViewTransformPoint(e.getPoint());
             // Panning the view has the first priority.
             if (isPanning()) return;
@@ -994,6 +1511,7 @@ public class NetworkView extends ZoomableView implements PaneView, Zoom {
         }
 
         public void mouseMoved(MouseEvent e) {
+            lastMousePoint = e.getPoint();
             Point2D pt = inverseViewTransformPoint(e.getPoint());
             overOutput = getNodeWithOutputPortAt(pt);
             overInput = getInputPortAt(pt, false);
@@ -1022,18 +1540,28 @@ public class NetworkView extends ZoomableView implements PaneView, Zoom {
             if (findNodeWithName(nodePort.getNode()).hasPublishedInput(nodePort.getPort()))
                 pMenu.add(new GoToPortAction(nodePort));
 
+            Theme.applyPopupMenuTheme(pMenu);
             pMenu.show(this, e.getX(), e.getY());
         } else {
             Node pressedNode = getNodeAt(inverseViewTransformPoint(pt));
             if (pressedNode != null) {
                 JPopupMenu nodeMenu = createNodeMenu(pressedNode);
                 nodeMenuLocation = pt;
+                Theme.applyPopupMenuTheme(nodeMenu);
                 nodeMenu.show(this, e.getX(), e.getY());
             } else {
                 networkMenuLocation = pt;
+                Theme.applyPopupMenuTheme(networkMenu);
                 networkMenu.show(this, e.getX(), e.getY());
             }
         }
+    }
+
+    public void updateTheme() {
+        if (networkMenu != null) {
+            Theme.applyPopupMenuTheme(networkMenu);
+        }
+        repaint();
     }
 
     private ImmutableMap<String, nodebox.graphics.Point> selectedNodePositions() {

@@ -254,17 +254,20 @@
             <port name="outer" label="Outer Diameter" range="value" type="float" value="200.0" widget="float" description="The outer diameter of the star."/>
             <port name="inner" label="Inner Diameter" range="value" type="float" value="100.0" widget="float" description="The inner diameter of the star."/>
         </node>
-        <node description="Create a text path that follows a shape." function="pyvector/text_on_path" image="text_on_path.png" name="text_on_path" position="10.00,2.00" prototype="generator">
+        <node description="Create a text path that follows a shape or curve." function="corevector/textOnPath" image="text_on_path.png" name="text_on_path" position="10.00,2.00" prototype="generator">
             <port name="text" range="value" type="string" value="text following a path" widget="string" description="The input text."/>
             <port name="path" range="value" type="geometry" widget="none" description="The path on which to put the text."/>
-            <port name="font_name" range="value" type="string" value="Verdana" widget="font" description="The name of the font."/>
-            <port name="font_size" range="value" type="float" value="24.0" widget="float" description="The size of the font."/>
-            <port name="alignment" range="value" type="string" value="leading" widget="menu" description="The way to lay out the text horizontally.">
-                <menu key="leading" label="Leading"/>
-                <menu key="trailing" label="Trailing"/>
+            <port name="font_name" label="Font" range="value" type="string" value="Verdana" widget="font" description="The name of the font."/>
+            <port name="font_size" label="Font Size" range="value" type="float" value="24.0" widget="float" description="The size of the font."/>
+            <port name="alignment" range="value" type="string" value="LEFT" widget="menu" description="Text alignment along the path.">
+                <menu key="LEFT" label="Left / Leading"/>
+                <menu key="CENTER" label="Center"/>
+                <menu key="RIGHT" label="Right / Trailing"/>
             </port>
-            <port name="margin" range="value" type="float" value="0.0" widget="float" description="The relative position of the text on the path (0 - 100)."/>
-            <port name="baseline_offset" range="value" type="float" value="0.0" widget="float" description="The vertical offset of the text from the path."/>
+            <port name="margin" range="value" type="float" value="0.0" widget="float" description="The relative starting position of the text on the path (0 - 100)."/>
+            <port name="baseline_offset" label="Baseline Offset" range="value" type="float" value="0.0" widget="float" description="The vertical offset of the text from the path."/>
+            <port name="tracking" label="Tracking" range="value" type="float" value="0.0" widget="float" description="Letter tracking/spacing offset."/>
+            <port name="flip" label="Flip Side" range="value" type="boolean" value="false" widget="toggle" description="Flip text to the opposite/inside of the curve."/>
         </node>
         <node description="Create a path out of text." function="corevector/textpath" image="textpath.png" name="textpath" position="4.00,3.00" prototype="generator">
             <port name="text" range="value" type="string" value="hello" widget="string" description="The input text."/>
@@ -291,6 +294,261 @@
             </port>
             <port name="offset" range="value" type="point" value="10.00,10.00" widget="point" description="The maximum amount of translation."/>
             <port name="seed" range="value" type="int" value="0" widget="int" description="The random variation."/>
+        </node>
+        <node description="Compute a Delaunay triangulation from a set of points." function="corevector/delaunay" image="polygon.png" name="delaunay" outputRange="list" outputType="geometry" position="7.00,14.00" prototype="generator">
+            <port name="points" range="list" type="list" widget="none" description="The input points to triangulate."/>
+        </node>
+        <node description="Generate a Voronoi diagram from points with optional cell inset." function="corevector/voronoi" image="polygon.png" name="voronoi" outputRange="list" outputType="geometry" position="7.00,15.00" prototype="generator">
+            <port name="points" range="list" type="list" widget="none" description="The seed points for the Voronoi cells."/>
+            <port name="width" range="value" type="float" value="500.0" widget="float" description="The bounding width of the diagram."/>
+            <port name="height" range="value" type="float" value="500.0" widget="float" description="The bounding height of the diagram."/>
+            <port min="0.0" max="1.0" name="inset" range="value" type="float" value="0.0" widget="float" description="Centroid inset factor (0 = no inset, 0.2 = margin between cells)."/>
+        </node>
+        <node description="Compute the convex hull bounding polygon around a set of points." function="corevector/convexHull" image="polygon.png" name="convex_hull" outputType="geometry" position="7.00,16.00" prototype="generator">
+            <port name="points" range="list" type="list" widget="none" description="The input points."/>
+        </node>
+        <node description="Smooth polygonal curves using Chaikin's corner-cutting algorithm." function="corevector/smooth" image="resample.png" name="smooth" position="7.00,17.00" prototype="filter">
+            <port min="1.0" max="8.0" name="iterations" range="value" type="int" value="3" widget="int" description="Number of Chaikin subdivision iterations."/>
+            <port min="0.05" max="0.45" name="ratio" range="value" type="float" value="0.25" widget="float" description="Corner cut ratio (0.25 is classic Chaikin)."/>
+        </node>
+        <node description="Generate organic vector streamlines guided by a Simplex noise vector field." function="corevector/flowField" image="resample.png" name="flow_field" outputRange="list" outputType="geometry" position="7.00,18.00" prototype="generator">
+            <port name="seedPoints" range="list" type="list" widget="none" description="Seed points from which streamlines originate (e.g. grid or scatter)."/>
+            <port min="1.0" max="1000.0" name="steps" range="value" type="int" value="50" widget="int" description="Number of step segments per streamline."/>
+            <port min="0.5" name="stepLength" range="value" type="float" value="5.0" widget="float" description="Length of each step segment."/>
+            <port min="0.0001" name="noiseScale" range="value" type="float" value="0.005" widget="float" description="Spatial frequency / scale of the noise field."/>
+            <port name="angleStrength" range="value" type="float" value="6.283185307179586" widget="float" description="Angular multiplier (2*PI maps noise [-1, 1] to a full circle)."/>
+            <port name="seed" range="value" type="int" value="0" widget="int" description="Random seed variation."/>
+        </node>
+        <node description="Generate fractal branching structures and curves using an L-System." function="corevector/lsystem" image="connect.png" name="lsystem" outputType="geometry" position="7.00,19.00" prototype="generator">
+            <port name="axiom" range="value" type="string" value="F" widget="string" description="The initial axiom string."/>
+            <port name="rules" range="value" type="string" value="F=F+F-F-F+F" widget="string" description="Grammar rewrite rules (e.g. F=F+F-F-F+F or multi-rule separated by semicolon/newline)."/>
+            <port min="0.0" max="8.0" name="generations" range="value" type="int" value="3" widget="int" description="The number of recursive rewriting generations."/>
+            <port name="angle" range="value" type="float" value="90.0" widget="float" description="The turning angle in degrees for + and -."/>
+            <port min="0.1" name="length" range="value" type="float" value="10.0" widget="float" description="The base step length."/>
+            <port min="0.01" name="length_scale" range="value" type="float" value="1.0" widget="float" description="Multiplier applied to length per generation."/>
+            <port name="position" range="value" type="point" value="0.00,0.00" widget="point" description="Starting root position."/>
+        </node>
+        <node description="Attract, repel, or swirl points and vector geometry around a center point." function="corevector/attractor" image="scatter.png" name="attractor" position="7.00,20.00" prototype="filter">
+            <port name="position" range="value" type="point" value="0.00,0.00" widget="point" description="The center attractor / repulsor position."/>
+            <port name="force" range="value" type="float" value="50.0" widget="float" description="Force magnitude. Positive attracts, negative repels."/>
+            <port min="0.0" name="radius" range="value" type="float" value="200.0" widget="float" description="Maximum influence radius."/>
+            <port name="mode" range="value" type="string" value="linear" widget="menu" description="Force attenuation behavior.">
+                <menu key="linear" label="Linear"/>
+                <menu key="inverse" label="Inverse"/>
+                <menu key="inverse_squared" label="Inverse Squared (Gravitational)"/>
+                <menu key="vortex" label="Vortex (Swirl)"/>
+                <menu key="spiral" label="Spiral (Pull + Swirl)"/>
+            </port>
+        </node>
+        <node description="Expand or shrink a vector path by an offset distance." function="corevector/offsetPath" image="resample.png" name="offset_path" position="7.00,21.00" prototype="filter">
+            <port name="distance" range="value" type="float" value="10.0" widget="float" description="Offset distance. Positive expands, negative shrinks."/>
+            <port name="join" range="value" type="string" value="round" widget="menu" description="Corner join style.">
+                <menu key="round" label="Round"/>
+                <menu key="miter" label="Miter"/>
+                <menu key="bevel" label="Bevel"/>
+            </port>
+        </node>
+        <node description="Extract vector isoline contours from an image at a brightness threshold." function="corevector/traceContours" image="resample.png" name="trace_contours" outputRange="list" outputType="geometry" position="7.00,22.00" prototype="generator">
+            <port name="file" range="value" type="string" value="" widget="file" description="Image file to trace."/>
+            <port min="0.0" max="100.0" name="threshold" range="value" type="float" value="50.0" widget="float" description="Brightness threshold isoline level (0 - 100)."/>
+            <port min="10.0" max="200.0" name="resolution" range="value" type="int" value="50" widget="int" description="Sampling grid resolution."/>
+            <port name="position" range="value" type="point" value="0.00,0.00" widget="point" description="Center position of traced contours."/>
+            <port name="width" range="value" type="float" value="500.0" widget="float" description="Output width."/>
+            <port name="height" range="value" type="float" value="500.0" widget="float" description="Output height."/>
+        </node>
+        <node description="Format and wrap text into rectangular editorial multi-column layouts." function="corevector/typeset" image="textpath.png" name="typeset" outputType="geometry" position="10.00,3.00" prototype="generator">
+            <port name="text" range="value" type="string" value="Typeset text layout" widget="string" description="The input text to typeset."/>
+            <port name="fontName" label="Font" range="value" type="string" value="Helvetica" widget="font" description="The font family name."/>
+            <port min="1.0" name="fontSize" label="Font Size" range="value" type="float" value="14.0" widget="float" description="Font size in points."/>
+            <port name="alignment" range="value" type="string" value="LEFT" widget="menu" description="Text alignment.">
+                <menu key="LEFT" label="Left"/>
+                <menu key="CENTER" label="Center"/>
+                <menu key="RIGHT" label="Right"/>
+            </port>
+            <port name="position" range="value" type="point" value="0.00,0.00" widget="point" description="Top-left origin of the text box."/>
+            <port name="width" label="Box Width" range="value" type="float" value="400.0" widget="float" description="Total bounding width."/>
+            <port name="height" label="Box Height" range="value" type="float" value="0.0" widget="float" description="Total height (0 = unbounded)."/>
+            <port min="0.5" name="lineHeight" label="Line Height" range="value" type="float" value="1.4" widget="float" description="Line height multiplier (leading)."/>
+            <port name="tracking" label="Tracking" range="value" type="float" value="0.0" widget="float" description="Letter spacing adjustment."/>
+            <port min="1.0" name="columns" label="Columns" range="value" type="int" value="1" widget="int" description="Number of text columns."/>
+            <port min="0.0" name="columnGutter" label="Gutter" range="value" type="float" value="20.0" widget="float" description="Gutter spacing between columns."/>
+        </node>
+        <node description="Automatically calculate font size to fit text snugly into a bounding box." function="corevector/fitText" image="textpath.png" name="fit_text" outputType="geometry" position="10.00,4.00" prototype="generator">
+            <port name="text" range="value" type="string" value="HEADLINE" widget="string" description="The input text."/>
+            <port name="fontName" label="Font" range="value" type="string" value="Helvetica" widget="font" description="The font name."/>
+            <port name="position" range="value" type="point" value="0.00,0.00" widget="point" description="Center position of text."/>
+            <port min="0.0" name="width" label="Target Width" range="value" type="float" value="300.0" widget="float" description="Maximum allowable width."/>
+            <port min="0.0" name="height" label="Target Height" range="value" type="float" value="80.0" widget="float" description="Maximum allowable height."/>
+            <port min="1.0" name="minFontSize" label="Min Font Size" range="value" type="float" value="8.0" widget="float" description="Minimum font size floor."/>
+            <port min="1.0" name="maxFontSize" label="Max Font Size" range="value" type="float" value="200.0" widget="float" description="Maximum font size ceiling."/>
+            <port name="alignment" range="value" type="string" value="CENTER" widget="menu" description="Text alignment.">
+                <menu key="LEFT" label="Left"/>
+                <menu key="CENTER" label="Center"/>
+                <menu key="RIGHT" label="Right"/>
+            </port>
+        </node>
+        <node description="Generate scalable vector halftone dot, line, or cross-hatch screens from an image." function="corevector/halftone" image="resample.png" name="halftone" outputType="geometry" position="10.00,5.00" prototype="generator">
+            <port name="imageFile" label="Image" range="value" type="string" value="" widget="file" description="Path to raster image file."/>
+            <port name="position" range="value" type="point" value="0.00,0.00" widget="point" description="Center position of halftone screen."/>
+            <port name="width" range="value" type="float" value="0.0" widget="float" description="Screen width (0 = image width)."/>
+            <port name="height" range="value" type="float" value="0.0" widget="float" description="Screen height (0 = image height)."/>
+            <port min="3.0" name="dotSpacing" label="Dot Spacing" range="value" type="float" value="12.0" widget="float" description="Screen grid spacing between dots/lines."/>
+            <port name="angle" label="Screen Angle" range="value" type="float" value="45.0" widget="float" description="Screen rotation angle in degrees."/>
+            <port name="shapeType" label="Screen Type" range="value" type="string" value="dot" widget="menu" description="Halftone screen element shape.">
+                <menu key="dot" label="Dots (Circles)"/>
+                <menu key="line" label="Lines (Hatching)"/>
+                <menu key="cross" label="Cross-Hatch"/>
+            </port>
+            <port min="0.1" name="scale" label="Element Scale" range="value" type="float" value="1.0" widget="float" description="Dot/line size multiplier."/>
+            <port min="0.0" max="1.0" name="threshold" label="Cutoff" range="value" type="float" value="0.0" widget="float" description="Minimum luminance cutoff threshold."/>
+            <port name="invert" label="Invert" range="value" type="boolean" value="false" widget="toggle" description="Invert positive/negative screen."/>
+        </node>
+        <node description="Generate procedural seamless decorative tiling patterns (arcs, diagonals, triangles)." function="corevector/truchetTiles" image="rect.png" name="truchet_tiles" outputType="geometry" position="10.00,6.00" prototype="generator">
+            <port name="position" range="value" type="point" value="0.00,0.00" widget="point" description="Center position of the tiling."/>
+            <port min="10.0" name="width" range="value" type="float" value="400.0" widget="float" description="Total pattern width."/>
+            <port min="10.0" name="height" range="value" type="float" value="400.0" widget="float" description="Total pattern height."/>
+            <port min="8.0" name="tileSize" label="Tile Size" range="value" type="float" value="40.0" widget="float" description="Size of each individual tile unit."/>
+            <port name="tileType" label="Tile Pattern" range="value" type="string" value="arcs" widget="menu" description="Tiling algorithm pattern.">
+                <menu key="arcs" label="Quarter-Circle Arcs (Smith)"/>
+                <menu key="diagonals" label="Diagonal Lines"/>
+                <menu key="triangles" label="Triangles"/>
+            </port>
+            <port min="0.5" name="lineWidth" label="Line Width" range="value" type="float" value="2.0" widget="float" description="Stroke width for line/arc patterns."/>
+            <port name="seed" range="value" type="int" value="1" widget="int" description="Random permutation seed."/>
+        </node>
+        <node description="Generate ornate mathematical spirograph guilloche rosettes and security borders." function="corevector/guilloche" image="ellipse.png" name="guilloche" outputType="geometry" position="10.00,7.00" prototype="generator">
+            <port name="position" range="value" type="point" value="0.00,0.00" widget="point" description="Center position."/>
+            <port name="majorRadius" label="Major Radius (R)" range="value" type="float" value="120.0" widget="float" description="Radius of fixed circle."/>
+            <port name="minorRadius" label="Minor Radius (r)" range="value" type="float" value="40.0" widget="float" description="Radius of rolling circle."/>
+            <port name="offset" label="Offset (d)" range="value" type="float" value="50.0" widget="float" description="Drawing pen distance from center of rolling circle."/>
+            <port min="100.0" name="steps" label="Steps" range="value" type="float" value="2000.0" widget="float" description="Number of curve interpolation steps."/>
+            <port min="0.1" name="revolutions" label="Revolutions" range="value" type="float" value="10.0" widget="float" description="Number of complete circular revolutions."/>
+            <port name="modulationAmp" label="Modulation Amplitude" range="value" type="float" value="0.0" widget="float" description="Harmonic amplitude modulation."/>
+            <port name="modulationFreq" label="Modulation Frequency" range="value" type="float" value="0.0" widget="float" description="Harmonic frequency modulation."/>
+        </node>
+        <node description="Blend neighboring circles into smooth liquid gooey metaball shapes." function="corevector/metaballs" image="ellipse.png" name="metaballs" outputType="geometry" position="10.00,8.00" prototype="generator">
+            <port name="circles" range="list" type="list" description="List of circles (paths or points)."/>
+            <port min="0.0" name="threshold" label="Bridging Threshold" range="value" type="float" value="30.0" widget="float" description="Maximum bridging distance gap between circles."/>
+            <port min="0.01" max="2.0" name="handleFactor" label="Handle Curvature" range="value" type="float" value="0.5" widget="float" description="Smoothness of connecting tangential Bezier bridges."/>
+            <port name="unite" label="Unite Compound" range="value" type="boolean" value="true" widget="toggle" description="Unite circles and bridges into a single solid path."/>
+        </node>
+        <node description="Generate a Swiss/Bauhaus editorial modular grid with columns, rows, gutters, and margins." function="corevector/modularGrid" image="rect.png" name="modular_grid" outputType="geometry" position="10.00,9.00" prototype="generator">
+            <port name="position" range="value" type="point" value="0.00,0.00" widget="point" description="Center position of grid."/>
+            <port min="10.0" name="width" range="value" type="float" value="800.0" widget="float" description="Total layout width."/>
+            <port min="10.0" name="height" range="value" type="float" value="600.0" widget="float" description="Total layout height."/>
+            <port min="1.0" name="columns" range="value" type="int" value="4" widget="int" description="Number of layout columns."/>
+            <port min="1.0" name="rows" range="value" type="int" value="3" widget="int" description="Number of layout rows."/>
+            <port min="0.0" name="colGutter" label="Col Gutter" range="value" type="float" value="15.0" widget="float" description="Gutter spacing between columns."/>
+            <port min="0.0" name="rowGutter" label="Row Gutter" range="value" type="float" value="15.0" widget="float" description="Gutter spacing between rows."/>
+            <port min="0.0" name="topMargin" label="Top Margin" range="value" type="float" value="40.0" widget="float" description="Outer top margin."/>
+            <port min="0.0" name="bottomMargin" label="Bottom Margin" range="value" type="float" value="40.0" widget="float" description="Outer bottom margin."/>
+            <port min="0.0" name="leftMargin" label="Left Margin" range="value" type="float" value="40.0" widget="float" description="Outer left margin."/>
+            <port min="0.0" name="rightMargin" label="Right Margin" range="value" type="float" value="40.0" widget="float" description="Outer right margin."/>
+            <port name="outputMode" label="Output" range="value" type="string" value="cells" widget="menu" description="Grid output mode.">
+                <menu key="cells" label="Module Cell Rectangles"/>
+                <menu key="lines" label="Guide Lines"/>
+                <menu key="all" label="Both Cells and Guides"/>
+            </port>
+        </node>
+        <node description="Align and distribute multiple shapes with uniform edge-to-edge spacing." function="corevector/alignDistribute" image="align.png" name="align_distribute" outputRange="list" outputType="geometry" position="10.00,10.00" prototype="generator">
+            <port name="shapes" range="list" type="list" description="Shapes to align and distribute."/>
+            <port name="align" label="Align" range="value" type="string" value="none" widget="menu" description="Alignment mode.">
+                <menu key="none" label="None"/>
+                <menu key="left" label="Left Edges"/>
+                <menu key="center" label="Center Horizontal"/>
+                <menu key="right" label="Right Edges"/>
+                <menu key="top" label="Top Edges"/>
+                <menu key="middle" label="Middle Vertical"/>
+                <menu key="bottom" label="Bottom Edges"/>
+            </port>
+            <port name="distribute" label="Distribute" range="value" type="string" value="none" widget="menu" description="Distribution mode.">
+                <menu key="none" label="None"/>
+                <menu key="horizontal" label="Horizontal Uniform Spacing"/>
+                <menu key="vertical" label="Vertical Uniform Spacing"/>
+            </port>
+            <port name="spacing" label="Gap Spacing" range="value" type="float" value="10.0" widget="float" description="Gap between shapes when distributing."/>
+        </node>
+        <node description="Tightly pack circles of varying radii into a container without overlap." function="corevector/packCircles" image="ellipse.png" name="pack_circles" outputRange="list" outputType="geometry" position="10.00,11.00" prototype="generator">
+            <port name="radii" range="list" type="list" description="List of circle radii."/>
+            <port name="center" range="value" type="point" value="0.00,0.00" widget="point" description="Center anchor point."/>
+            <port min="0.0" name="containerRadius" label="Boundary Radius" range="value" type="float" value="200.0" widget="float" description="Optional outer container radius (0 = free packing)."/>
+            <port min="10.0" max="500.0" name="iterations" range="value" type="int" value="150" widget="int" description="Relaxation simulation iterations."/>
+            <port name="seed" range="value" type="int" value="1" widget="int" description="Initial distribution seed."/>
+        </node>
+        <node description="Add organic hand-drawn wobble, pencil jitter, or deckled edges to vector paths." function="corevector/roughen" image="resample.png" name="roughen" position="10.00,12.00" prototype="filter">
+            <port min="0.0" name="size" label="Wobble Size" range="value" type="float" value="5.0" widget="float" description="Displacement magnitude in points."/>
+            <port min="0.1" name="detail" label="Detail" range="value" type="float" value="2.0" widget="float" description="Subdivision detail frequency along path."/>
+            <port name="method" label="Method" range="value" type="string" value="smooth" widget="menu" description="Jitter noise algorithm.">
+                <menu key="smooth" label="Smooth (Simplex Noise Wave)"/>
+                <menu key="jitter" label="Jitter (Random Sharp)"/>
+            </port>
+            <port name="seed" range="value" type="int" value="1" widget="int" description="Random variation seed."/>
+        </node>
+        <node description="Project flat geometric long shadows from vector shapes at an angle." function="corevector/longShadow" image="filter.png" name="long_shadow" position="10.00,13.00" prototype="filter">
+            <port name="angle" label="Shadow Angle" range="value" type="float" value="45.0" widget="float" description="Direction angle in degrees."/>
+            <port min="1.0" name="distance" label="Distance" range="value" type="float" value="50.0" widget="float" description="Shadow projection length."/>
+            <port min="0.0" max="1.0" name="fade" label="Fade" range="value" type="float" value="0.0" widget="float" description="Shadow transparency falloff (0 - 1)."/>
+        </node>
+        <node description="Extrude 2D vector shapes into pseudo-3D isometric facets with realistic face shading." function="corevector/extrude3d" image="filter.png" name="extrude_3d" position="10.00,14.00" prototype="filter">
+            <port min="0.0" name="depth" label="Extrude Depth" range="value" type="float" value="20.0" widget="float" description="Axonometric extrusion depth."/>
+            <port name="angle" label="Extrude Angle" range="value" type="float" value="45.0" widget="float" description="Extrusion angle in degrees."/>
+            <port name="frontColor" label="Front Color" range="value" type="color" value="#dcdce6ff" widget="color" description="Front cap color."/>
+            <port name="sideColor" label="Side Color" range="value" type="color" value="#595966ff" widget="color" description="Base color for extruded side facets."/>
+            <port min="0.0" max="100.0" name="lightIntensity" label="Light Intensity" range="value" type="float" value="80.0" widget="float" description="Directional lighting contrast."/>
+        </node>
+        <node description="Perform 2D Constructive Solid Geometry (CSG) boolean operations between two shapes." function="corevector/booleanOperation" image="filter.png" name="boolean" position="10.00,15.00" prototype="generator">
+            <port name="shape1" range="value" type="geometry" widget="none" description="Primary shape."/>
+            <port name="shape2" range="value" type="geometry" widget="none" description="Secondary shape."/>
+            <port name="operation" label="Operation" range="value" type="string" value="union" widget="menu" description="Boolean CSG operation.">
+                <menu key="union" label="Union (Add)"/>
+                <menu key="difference" label="Difference (Subtract)"/>
+                <menu key="intersection" label="Intersection"/>
+                <menu key="xor" label="Exclude (XOR)"/>
+            </port>
+        </node>
+        <node description="Customize stroke styles with dashes, dash phase, caps, joins, and arrowheads." function="corevector/strokeStyle" image="resample.png" name="stroke_style" position="10.00,16.00" prototype="filter">
+            <port min="0.0" name="dashLength" label="Dash Length" range="value" type="float" value="0.0" widget="float" description="Length of dash segments (0 = solid)."/>
+            <port min="0.0" name="gapLength" label="Gap Length" range="value" type="float" value="0.0" widget="float" description="Length of gaps between dashes."/>
+            <port name="dashPhase" label="Dash Phase" range="value" type="float" value="0.0" widget="float" description="Dash animation phase offset."/>
+            <port name="cap" label="Line Cap" range="value" type="string" value="butt" widget="menu" description="End cap style.">
+                <menu key="butt" label="Butt"/>
+                <menu key="round" label="Round"/>
+                <menu key="square" label="Square"/>
+            </port>
+            <port name="join" label="Line Join" range="value" type="string" value="miter" widget="menu" description="Corner join style.">
+                <menu key="miter" label="Miter"/>
+                <menu key="round" label="Round"/>
+                <menu key="bevel" label="Bevel"/>
+            </port>
+            <port name="startArrow" label="Start Arrowhead" range="value" type="boolean" value="false" widget="toggle" description="Add arrowhead at start of path."/>
+            <port name="endArrow" label="End Arrowhead" range="value" type="boolean" value="false" widget="toggle" description="Add arrowhead at end of path."/>
+            <port min="1.0" name="arrowSize" label="Arrowhead Size" range="value" type="float" value="10.0" widget="float" description="Size of arrowheads in points."/>
+        </node>
+        <node description="Smoothly morph and tween between two arbitrary vector shapes." function="corevector/morph" image="resample.png" name="morph" outputType="geometry" position="10.00,17.00" prototype="generator">
+            <port name="shapeA" range="value" type="geometry" widget="none" description="Initial shape (progress = 0.0)."/>
+            <port name="shapeB" range="value" type="geometry" widget="none" description="Target shape (progress = 1.0)."/>
+            <port min="0.0" max="1.0" name="progress" label="Progress" range="value" type="float" value="0.5" widget="float" description="Interpolation progress slider (0.0 to 1.0)."/>
+            <port min="12.0" max="2000.0" name="samples" label="Detail Samples" range="value" type="int" value="100" widget="int" description="Number of perimeter sample vertices."/>
+        </node>
+        <node description="Define an export frame artboard for multi-canvas page layout and automated batch export." function="corevector/artboard" image="generator.png" name="artboard" outputType="geometry" position="10.00,18.00" prototype="generator">
+            <port name="shape" range="value" type="geometry" widget="none" description="Vector shape content to place inside the artboard."/>
+            <port name="name" label="Artboard Name" range="value" type="string" value="Artboard 1" widget="string" description="Name of the artboard (used as export filename)."/>
+            <port name="preset" label="Preset" range="value" type="string" value="custom" widget="menu" description="Predefined export dimension standard.">
+                <menu key="custom" label="Custom"/>
+                <menu key="instagram_story" label="Instagram Story (1080x1920)"/>
+                <menu key="instagram_post" label="Instagram Post (1080x1080)"/>
+                <menu key="twitter_header" label="Twitter/X Header (1500x500)"/>
+                <menu key="youtube_thumbnail" label="YouTube Thumbnail (1280x720)"/>
+                <menu key="a4" label="A4 Document (2480x3508)"/>
+                <menu key="us_letter" label="US Letter (2550x3300)"/>
+                <menu key="business_card" label="Business Card (1050x600)"/>
+            </port>
+            <port min="1.0" name="width" label="Width" range="value" type="float" value="1080.0" widget="float" description="Width in pixels/points."/>
+            <port min="1.0" name="height" label="Height" range="value" type="float" value="1080.0" widget="float" description="Height in pixels/points."/>
+            <port name="position" label="Position" range="value" type="point" value="0.00,0.00" widget="point" description="Artboard center position."/>
+            <port name="clip" label="Clip Content" range="value" type="boolean" value="true" widget="toggle" description="Clip shapes extending beyond artboard boundaries."/>
+            <port name="background" label="Background Color" range="value" type="color" value="#ffffffff" widget="color" description="Artboard backdrop fill color."/>
+            <port name="showFrame" label="Show Frame &amp; Label" range="value" type="boolean" value="true" widget="toggle" description="Display border and name title in viewport."/>
         </node>
     </node>
 </ndbx>

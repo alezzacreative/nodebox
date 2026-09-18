@@ -145,11 +145,20 @@ public class CodeLibrariesDialog extends JDialog {
                 CodeLibrariesDialog.this.setVisible(false);
             }
         });
+        closeButton.setUI(new nodebox.ui.ThemeButtonUI());
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.TRAILING, 5, 5));
         buttonPanel.add(closeButton);
         panel.add(buttonPanel, BorderLayout.SOUTH);
 
+        boolean dark = Theme.isDark();
+        Color bg = dark ? Theme.PANEL_BACKGROUND : Theme.DIALOG_BACKGROUND;
+        panel.setBackground(bg);
+        buttonPanel.setBackground(bg);
+        libraryScroll.getViewport().setBackground(Theme.NODE_SELECTION_BACKGROUND_COLOR);
+        functionLibraryList.setBackground(Theme.NODE_SELECTION_BACKGROUND_COLOR);
+
         setContentPane(panel);
+        getRootPane().setDefaultButton(closeButton);
         setSize(300, 400);
         setMinimumSize(new Dimension(300, 200));
         setLocationRelativeTo(document);

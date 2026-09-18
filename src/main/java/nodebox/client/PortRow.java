@@ -37,6 +37,10 @@ public class PortRow extends JComponent implements MouseListener, ActionListener
     private static final int BOTTOM_PADDING = 2;
 
     public PortRow(NodeBoxDocument document, String portName, JComponent control) {
+        this(document, portName, control, null);
+    }
+
+    public PortRow(NodeBoxDocument document, String portName, JComponent control, JComponent extraComponent) {
         this.document = document;
         this.portName = portName;
         addMouseListener(this);
@@ -64,6 +68,10 @@ public class PortRow extends JComponent implements MouseListener, ActionListener
         add(this.label);
         add(Box.createHorizontalStrut(10));
         add(this.control);
+        if (extraComponent != null) {
+            add(Box.createHorizontalStrut(6));
+            add(extraComponent);
+        }
         add(Box.createHorizontalGlue());
         // Compensate for the popup button.
         add(Box.createHorizontalStrut(30));
@@ -89,6 +97,7 @@ public class PortRow extends JComponent implements MouseListener, ActionListener
 
     public void mousePressed(MouseEvent e) {
         if (e.getX() < this.getWidth() - 20) return;
+        Theme.applyPopupMenuTheme(popupMenu);
         popupMenu.show(this, this.getWidth() - 20, 20);
     }
 

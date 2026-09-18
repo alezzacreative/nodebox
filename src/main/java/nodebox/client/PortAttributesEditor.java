@@ -147,6 +147,25 @@ public class PortAttributesEditor extends JPanel implements ActionListener, Focu
         // Menu Items
         menuItemsTable = new JTable(new MenuItemsModel());
         menuItemsTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        boolean dark = Theme.isDark();
+        if (dark) {
+            menuItemsTable.setBackground(new Color(26, 26, 30));
+            menuItemsTable.setForeground(new Color(228, 228, 231));
+            menuItemsTable.setGridColor(new Color(45, 45, 52));
+            menuItemsTable.setSelectionBackground(new Color(63, 63, 70));
+            menuItemsTable.setSelectionForeground(Color.WHITE);
+        } else {
+            menuItemsTable.setBackground(Color.WHITE);
+            menuItemsTable.setForeground(new Color(30, 30, 32));
+            menuItemsTable.setGridColor(new Color(220, 220, 225));
+            menuItemsTable.setSelectionBackground(new Color(210, 225, 245));
+            menuItemsTable.setSelectionForeground(Color.BLACK);
+        }
+        if (menuItemsTable.getTableHeader() != null) {
+            menuItemsTable.getTableHeader().setDefaultRenderer(new nodebox.ui.ThemeTableHeaderUI.ThemeTableHeaderRenderer());
+            menuItemsTable.getTableHeader().setBackground(dark ? new Color(36, 36, 42) : new Color(236, 236, 240));
+            menuItemsTable.getTableHeader().setForeground(dark ? new Color(228, 228, 231) : new Color(30, 30, 32));
+        }
         menuItemsTable.addMouseListener(new MouseAdapter() {
             public void mouseClicked(MouseEvent e) {
                 if (e.getClickCount() == 2)
@@ -155,6 +174,8 @@ public class PortAttributesEditor extends JPanel implements ActionListener, Focu
         });
         JPanel tablePanel = new JPanel(new BorderLayout(5, 5));
         JScrollPane tableScroll = new JScrollPane(menuItemsTable, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        tableScroll.getViewport().setBackground(dark ? new Color(26, 26, 30) : Color.WHITE);
+        tableScroll.setBorder(null);
         tableScroll.setSize(200, 170);
         tableScroll.setPreferredSize(new Dimension(200, 170));
         tableScroll.setMaximumSize(new Dimension(200, 170));

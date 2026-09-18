@@ -141,4 +141,16 @@ public class MathFunctionsTest {
         assertEquals(6L, round(5.9));
     }
 
+    @Test
+    public void testExpression() {
+        assertEquals(14.0, expression("2 + 3 * 4", 0, 0, 0, 0), 0.0001);
+        assertEquals(20.0, expression("(2 + 3) * 4", 0, 0, 0, 0), 0.0001);
+        assertEquals(11.0, expression("x * 2 + y", 3, 5, 0, 0), 0.0001);
+        assertEquals(1.0, expression("sin(pi / 2)", 0, 0, 0, 0), 0.0001);
+        assertEquals(4.0, expression("sqrt(16)", 0, 0, 0, 0), 0.0001);
+        assertEquals(8.0, expression("2 ^ 3", 0, 0, 0, 0), 0.0001);
+        assertEquals(10.0, expression("clamp(15, 0, 10)", 0, 0, 0, 0), 0.0001);
+        assertEquals(5.0, expression("min(5, 10)", 0, 0, 0, 0), 0.0001);
+    }
+
 }

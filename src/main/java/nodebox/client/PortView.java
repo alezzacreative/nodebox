@@ -45,6 +45,9 @@ public class PortView extends JComponent implements PaneView, PortControl.OnValu
     private final PortPane pane;
     private JPanel controlPanel;
     private Map<String, PortControl> controlMap = new HashMap<String, PortControl>();
+    private Map<String, Boolean> ratioLockedNodes = new HashMap<String, Boolean>();
+    private Map<String, Double> nodeAspectRatios = new HashMap<String, Double>();
+    private boolean isRatioUpdating = false;
 
     public PortView(PortPane pane, NodeBoxDocument document) {
         this.pane = pane;
@@ -138,6 +141,8 @@ public class PortView extends JComponent implements PaneView, PortControl.OnValu
         for (Port p : node.getInputs())
             portNames.add(p.getName());
 
+        final boolean hasWidthAndHeight = node.hasInput("width") && node.hasInput("height");
+
         for (String portName : portNames) {
             Port p = node.getInput(portName);
             // Hide ports with names that start with an underscore.
@@ -162,12 +167,44 @@ public class PortView extends JComponent implements PaneView, PortControl.OnValu
                 control = new JLabel("  ");
             }
 
+            JComponent extraComponent = null;
+            if (hasWidthAndHeight && "width".equals(portName)) {
+                final String pathKey = activeNodePath;
+                final JCheckBox lockRatioCheck = new JCheckBox("Lock");
+                lockRatioCheck.setFont(Theme.SMALL_FONT);
+                lockRatioCheck.setForeground(Theme.TEXT_NORMAL_COLOR);
+                lockRatioCheck.setToolTipText("Lock aspect ratio (width & height)");
+                lockRatioCheck.setFocusable(false);
+                lockRatioCheck.setOpaque(false);
+                Boolean locked = ratioLockedNodes.get(pathKey);
+                lockRatioCheck.setSelected(locked == Boolean.TRUE);
+                lockRatioCheck.addActionListener(new java.awt.event.ActionListener() {
+                    public void actionPerformed(java.awt.event.ActionEvent e) {
+                        boolean isLocked = lockRatioCheck.isSelected();
+                        ratioLockedNodes.put(pathKey, isLocked);
+                        if (isLocked) {
+                            Node n = getActiveNode();
+                            if (n != null && n.hasInput("width") && n.hasInput("height")) {
+                                Object wv = n.getInput("width").getValue();
+                                Object hv = n.getInput("height").getValue();
+                                if (wv instanceof Number && hv instanceof Number) {
+                                    double w = ((Number) wv).doubleValue();
+                                    double h = ((Number) hv).doubleValue();
+                                    nodeAspectRatios.put(pathKey, (w != 0.0) ? (h / w) : 1.0);
+                                }
+                            }
+                        }
+                    }
+                });
+                extraComponent = lockRatioCheck;
+            }
+
             GridBagConstraints rowConstraints = new GridBagConstraints();
             rowConstraints.gridx = 0;
             rowConstraints.gridy = rowIndex;
             rowConstraints.fill = GridBagConstraints.HORIZONTAL;
             rowConstraints.weightx = 1.0;
-            PortRow portRow = new PortRow(getDocument(), portName, control);
+            PortRow portRow = new PortRow(getDocument(), portName, control, extraComponent);
             portRow.setEnabled(p.isEnabled());
             controlPanel.add(portRow, rowConstraints);
             rowIndex++;
@@ -207,6 +244,40 @@ public class PortView extends JComponent implements PaneView, PortControl.OnValu
 
     public void onValueChange(String nodePath, String portName, Object newValue) {
         document.setValue(nodePath, portName, newValue);
+        if (!isRatioUpdating && ratioLockedNodes.get(nodePath) == Boolean.TRUE) {
+            Node activeNode = getActiveNode();
+            if (activeNode != null && activeNode.hasInput("width") && activeNode.hasInput("height")) {
+                Double ratio = nodeAspectRatios.get(nodePath);
+                if (ratio == null || ratio <= 0.0) {
+                    Object wv = activeNode.getInput("width").getValue();
+                    Object hv = activeNode.getInput("height").getValue();
+                    if (wv instanceof Number && hv instanceof Number) {
+                        double w = ((Number) wv).doubleValue();
+                        double h = ((Number) hv).doubleValue();
+                        ratio = (w != 0.0) ? (h / w) : 1.0;
+                        nodeAspectRatios.put(nodePath, ratio);
+                    } else {
+                        ratio = 1.0;
+                    }
+                }
+                isRatioUpdating = true;
+                try {
+                    if ("width".equals(portName) && newValue instanceof Number) {
+                        double newWidth = ((Number) newValue).doubleValue();
+                        double newHeight = Math.round(newWidth * ratio * 100.0) / 100.0;
+                        document.setValue(nodePath, "height", (float) newHeight);
+                        updatePortValue("height", (float) newHeight);
+                    } else if ("height".equals(portName) && newValue instanceof Number) {
+                        double newHeight = ((Number) newValue).doubleValue();
+                        double newWidth = (ratio != 0.0) ? Math.round(newHeight / ratio * 100.0) / 100.0 : newHeight;
+                        document.setValue(nodePath, "width", (float) newWidth);
+                        updatePortValue("width", (float) newWidth);
+                    }
+                } finally {
+                    isRatioUpdating = false;
+                }
+            }
+        }
     }
 
     private class ControlPanel extends JPanel {
@@ -218,18 +289,18 @@ public class PortView extends JComponent implements PaneView, PortControl.OnValu
         protected void paintComponent(Graphics g) {
             if (getActiveNode() == null) {
                 Rectangle clip = g.getClipBounds();
-                g.setColor(new Color(196, 196, 196));
+                g.setColor(Theme.PORT_EMPTY_BACKGROUND);
                 g.fillRect(clip.x, clip.y, clip.width, clip.height);
             } else {
                 int height = getHeight();
                 int width = getWidth();
                 g.setColor(Theme.PORT_LABEL_BACKGROUND);
                 g.fillRect(0, 0, LABEL_WIDTH - 3, height);
-                g.setColor(new Color(146, 146, 146));
+                g.setColor(Theme.PORT_DIVIDER_1);
                 g.fillRect(LABEL_WIDTH - 3, 0, 1, height);
-                g.setColor(new Color(133, 133, 133));
+                g.setColor(Theme.PORT_DIVIDER_2);
                 g.fillRect(LABEL_WIDTH - 2, 0, 1, height);
-                g.setColor(new Color(112, 112, 112));
+                g.setColor(Theme.PORT_DIVIDER_3);
                 g.fillRect(LABEL_WIDTH - 1, 0, 1, height);
                 g.setColor(Theme.PORT_VALUE_BACKGROUND);
                 g.fillRect(LABEL_WIDTH, 0, width - LABEL_WIDTH, height);

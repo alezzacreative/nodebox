@@ -22,10 +22,8 @@ public class ActionHeader extends JPanel {
     @Override
     protected void paintComponent(Graphics g) {
         Graphics2D g2 = (Graphics2D) g;
-
         g2.setFont(Theme.SMALL_BOLD_FONT);
-
-        g2.drawImage(backgroundImage, 0, 0, getWidth(), 25, null);
+        Theme.paintHeaderBackground(g2, 0, 0, getWidth(), 25);
     }
 
     public void addDivider() {
@@ -45,7 +43,7 @@ public class ActionHeader extends JPanel {
 
     public static class Divider extends JComponent {
         private Divider() {
-            Dimension d = new Dimension(1, 24);
+            Dimension d = new Dimension(2, 24);
             setPreferredSize(d);
             setMinimumSize(d);
             setMaximumSize(d);
@@ -54,7 +52,7 @@ public class ActionHeader extends JPanel {
 
         @Override
         protected void paintComponent(Graphics g) {
-            g.drawImage(dividerImage, 0, 0, null);
+            Theme.paintDivider((Graphics2D) g, 0, 0, getHeight());
         }
     }
 

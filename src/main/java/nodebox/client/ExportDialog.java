@@ -49,8 +49,9 @@ public class ExportDialog extends JDialog {
         add(mainPanel, BorderLayout.CENTER);
 
         // Format
+        final JLabel formatLabel = new JLabel("Format:");
         final JPanel formatPanel = new JPanel(new FlowLayout(FlowLayout.LEADING, 10, 10));
-        formatPanel.add(new JLabel("Format:"));
+        formatPanel.add(formatLabel);
         formatBox = new JComboBox<>();
         formatBox.addItem("SVG");
         formatBox.addItem("PNG");
@@ -59,8 +60,9 @@ public class ExportDialog extends JDialog {
         formatBox.setSelectedItem("SVG");
         formatPanel.add(formatBox);
 
+        final JLabel delimiterLabel = new JLabel("Delimiter:");
         final JPanel delimiterPanel = new JPanel(new FlowLayout(FlowLayout.LEADING, 10, 10));
-        delimiterPanel.add(new JLabel("Delimiter:"));
+        delimiterPanel.add(delimiterLabel);
         delimiterBox = new JComboBox<>();
         delimiterBox.addItem(new Delimiter(',', ","));
         delimiterBox.addItem(new Delimiter(';', ";"));
@@ -69,8 +71,9 @@ public class ExportDialog extends JDialog {
         delimiterBox.addItem(new Delimiter(' ', "Space"));
         delimiterPanel.add(delimiterBox);
 
+        final JLabel quotesLabel = new JLabel("Quotes:");
         final JPanel quotesPanel = new JPanel(new FlowLayout(FlowLayout.LEADING, 10, 10));
-        quotesPanel.add(new JLabel("Quotes:"));
+        quotesPanel.add(quotesLabel);
         quotesBox = new JCheckBox("Escape output using quotes", true);
         quotesPanel.add(quotesBox);
 
@@ -102,6 +105,25 @@ public class ExportDialog extends JDialog {
         });
         buttonPanel.add(nextButton);
         mainPanel.add(buttonPanel, BorderLayout.SOUTH);
+
+        // Apply theme styling
+        Color dialogBg = Theme.DIALOG_BACKGROUND;
+        getContentPane().setBackground(dialogBg);
+        mainPanel.setBackground(dialogBg);
+        formatPanel.setBackground(dialogBg);
+        delimiterPanel.setBackground(dialogBg);
+        quotesPanel.setBackground(dialogBg);
+        buttonPanel.setBackground(dialogBg);
+        formatLabel.setForeground(Theme.TEXT_NORMAL_COLOR);
+        delimiterLabel.setForeground(Theme.TEXT_NORMAL_COLOR);
+        quotesLabel.setForeground(Theme.TEXT_NORMAL_COLOR);
+        quotesBox.setBackground(dialogBg);
+        quotesBox.setForeground(Theme.TEXT_NORMAL_COLOR);
+        formatBox.setUI(new nodebox.ui.ThemeComboBoxUI());
+        delimiterBox.setUI(new nodebox.ui.ThemeComboBoxUI());
+        cancelButton.setUI(new nodebox.ui.ThemeButtonUI());
+        nextButton.setUI(new nodebox.ui.ThemeButtonUI());
+
         pack();
         getRootPane().setDefaultButton(nextButton);
 

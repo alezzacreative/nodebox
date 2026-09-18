@@ -26,7 +26,6 @@ public class Divider extends JComponent {
 
     @Override
     protected void paintComponent(Graphics g) {
-        g.drawImage(paneHeaderDivider, 0, 0, null);
-
+        Theme.paintDivider((Graphics2D) g, 0, 0, getHeight());
     }
 }

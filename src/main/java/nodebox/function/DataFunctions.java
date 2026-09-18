@@ -7,8 +7,14 @@ import com.opencsv.exceptions.CsvValidationException;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import nodebox.graphics.Color;
+import nodebox.graphics.Geometry;
+import nodebox.graphics.Path;
+import nodebox.graphics.Point;
 import nodebox.util.ReflectionUtils;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
 import java.io.*;
 import java.text.NumberFormat;
 import java.text.ParseException;
@@ -24,7 +30,7 @@ public class DataFunctions {
 
     static {
         LIBRARY = JavaLibrary.ofClass("data", DataFunctions.class,
-                "lookup", "importText", "importCSV", "filterData", "makeTable");
+                "lookup", "importText", "importCSV", "filterData", "makeTable", "sampleImage", "barchart", "donut");
 
         separators = new HashMap<String, Character>();
         separators.put("period", '.');
@@ -368,6 +374,195 @@ public class DataFunctions {
             }
         }
         return maxSize;
+    }
+
+    private static final Map<String, BufferedImage> IMAGE_CACHE = new HashMap<String, BufferedImage>();
+    private static final Map<String, Long> IMAGE_TIMESTAMPS = new HashMap<String, Long>();
+
+    public static List<?> sampleImage(String file, List<Point> points, String channel, String origin) {
+        if (points == null || points.isEmpty()) return ImmutableList.of();
+        if (file == null || file.trim().isEmpty()) return ImmutableList.of();
+
+        BufferedImage img = null;
+        File f = new File(file.trim());
+        if (f.exists() && f.isFile()) {
+            long lastMod = f.lastModified();
+            synchronized (IMAGE_CACHE) {
+                if (IMAGE_CACHE.containsKey(file) && IMAGE_TIMESTAMPS.get(file) == lastMod) {
+                    img = IMAGE_CACHE.get(file);
+                } else {
+                    try {
+                        img = ImageIO.read(f);
+                        if (img != null) {
+                            IMAGE_CACHE.put(file, img);
+                            IMAGE_TIMESTAMPS.put(file, lastMod);
+                        }
+                    } catch (IOException ignored) {
+                    }
+                }
+            }
+        }
+
+        if (img == null) return ImmutableList.of();
+
+        int imgW = img.getWidth();
+        int imgH = img.getHeight();
+        boolean isCenter = origin == null || "center".equalsIgnoreCase(origin);
+        String chan = channel != null ? channel.toLowerCase(Locale.US) : "brightness";
+
+        ImmutableList.Builder<Object> result = ImmutableList.builder();
+        for (Point pt : points) {
+            if (pt == null) {
+                result.add(chan.equals("color") ? new Color(0, 0, 0, 0) : 0.0);
+                continue;
+            }
+            int px = (int) Math.round(isCenter ? (pt.x + imgW / 2.0) : pt.x);
+            int py = (int) Math.round(isCenter ? (pt.y + imgH / 2.0) : pt.y);
+
+            if (px < 0 || px >= imgW || py < 0 || py >= imgH) {
+                result.add(chan.equals("color") ? new Color(0, 0, 0, 0) : 0.0);
+                continue;
+            }
+
+            int argb = img.getRGB(px, py);
+            int a = (argb >> 24) & 0xFF;
+            int r = (argb >> 16) & 0xFF;
+            int g = (argb >> 8) & 0xFF;
+            int b = argb & 0xFF;
+
+            if ("color".equals(chan)) {
+                result.add(new Color(r / 255.0, g / 255.0, b / 255.0, a / 255.0));
+            } else if ("red".equals(chan)) {
+                result.add((double) r);
+            } else if ("green".equals(chan)) {
+                result.add((double) g);
+            } else if ("blue".equals(chan)) {
+                result.add((double) b);
+            } else if ("alpha".equals(chan)) {
+                result.add((double) a);
+            } else if ("hue".equals(chan)) {
+                Color c = new Color(r / 255.0, g / 255.0, b / 255.0, a / 255.0);
+                result.add(c.getHue() * 360.0);
+            } else if ("saturation".equals(chan)) {
+                Color c = new Color(r / 255.0, g / 255.0, b / 255.0, a / 255.0);
+                result.add(c.getSaturation() * 100.0);
+            } else { // "brightness" / perceived luminance default (0 - 100)
+                double lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255.0 * 100.0;
+                result.add(lum);
+            }
+        }
+        return result.build();
+    }
+
+    public static Geometry barchart(List<Double> values, Point position, double width, double height, double barPadding, String orientation) {
+        if (values == null || values.isEmpty()) return new Geometry();
+        Geometry geo = new Geometry();
+        int count = values.size();
+        double w = width > 0 ? width : 400.0;
+        double h = height > 0 ? height : 200.0;
+        double posX = position != null ? position.x : 0.0;
+        double posY = position != null ? position.y : 0.0;
+        double pad = Math.max(0.0, Math.min(barPadding, 50.0));
+
+        double maxVal = 0.0;
+        for (Double v : values) {
+            if (v != null && Math.abs(v) > maxVal) maxVal = Math.abs(v);
+        }
+        if (maxVal == 0.0) maxVal = 1.0;
+
+        boolean isHorizontal = "horizontal".equalsIgnoreCase(orientation);
+
+        if (!isHorizontal) {
+            double slotW = w / count;
+            double barW = Math.max(1.0, slotW - pad);
+            double startX = posX - w / 2.0 + slotW / 2.0;
+            double baseY = posY + h / 2.0;
+
+            for (int i = 0; i < count; i++) {
+                Double v = values.get(i);
+                double val = v != null ? v : 0.0;
+                double barH = (Math.abs(val) / maxVal) * h;
+                double bx = startX + i * slotW;
+                double by = baseY - barH / 2.0;
+
+                Path bar = new Path();
+                bar.rect(bx, by, barW, barH);
+                bar.setFill(Color.BLACK);
+                geo.add(bar);
+            }
+        } else {
+            double slotH = h / count;
+            double barH = Math.max(1.0, slotH - pad);
+            double startY = posY - h / 2.0 + slotH / 2.0;
+            double baseX = posX - w / 2.0;
+
+            for (int i = 0; i < count; i++) {
+                Double v = values.get(i);
+                double val = v != null ? v : 0.0;
+                double barW = (Math.abs(val) / maxVal) * w;
+                double by = startY + i * slotH;
+                double bx = baseX + barW / 2.0;
+
+                Path bar = new Path();
+                bar.rect(bx, by, barW, barH);
+                bar.setFill(Color.BLACK);
+                geo.add(bar);
+            }
+        }
+        return geo;
+    }
+
+    public static List<Path> donut(List<Double> values, Point position, double innerRadius, double outerRadius, double startAngle) {
+        if (values == null || values.isEmpty()) return ImmutableList.of();
+        double sum = 0.0;
+        for (Double v : values) {
+            if (v != null && v > 0) sum += v;
+        }
+        if (sum == 0.0) return ImmutableList.of();
+
+        double cx = position != null ? position.x : 0.0;
+        double cy = position != null ? position.y : 0.0;
+        double rIn = Math.max(0.0, innerRadius);
+        double rOut = Math.max(rIn + 1.0, outerRadius);
+
+        ImmutableList.Builder<Path> list = ImmutableList.builder();
+        double currentAngle = startAngle;
+
+        for (Double v : values) {
+            double val = (v != null && v > 0) ? v : 0.0;
+            double sweep = (val / sum) * 360.0;
+            if (sweep <= 0.001) continue;
+
+            Path wedge = new Path();
+            int steps = (int) Math.max(4, sweep / 5.0);
+
+            // Outer arc
+            for (int s = 0; s <= steps; s++) {
+                double a = Math.toRadians(currentAngle + (sweep * s / steps));
+                double px = cx + Math.cos(a) * rOut;
+                double py = cy + Math.sin(a) * rOut;
+                if (s == 0) wedge.moveto(px, py);
+                else wedge.lineto(px, py);
+            }
+
+            // Inner arc (backwards)
+            if (rIn > 0.0) {
+                for (int s = steps; s >= 0; s--) {
+                    double a = Math.toRadians(currentAngle + (sweep * s / steps));
+                    double px = cx + Math.cos(a) * rIn;
+                    double py = cy + Math.sin(a) * rIn;
+                    wedge.lineto(px, py);
+                }
+            } else {
+                wedge.lineto(cx, cy);
+            }
+
+            wedge.close();
+            wedge.setFill(Color.BLACK);
+            list.add(wedge);
+            currentAngle += sweep;
+        }
+        return list.build();
     }
 
 }

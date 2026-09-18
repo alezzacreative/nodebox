@@ -29,7 +29,16 @@ public class NetworkFunctions {
 
     static {
         LIBRARY = JavaLibrary.ofClass("network", NetworkFunctions.class,
-                "httpGet", "queryJSON", "encodeURL");
+                "httpGet", "queryJSON", "encodeURL", "fetchJSON");
+    }
+
+    public static Iterable<?> fetchJSON(final String url, final String query, final long refreshTimeSeconds) {
+        if (url == null || url.trim().isEmpty()) return ImmutableList.of();
+        Map<String, Object> resp = httpGet(url, "", "", refreshTimeSeconds);
+        Object body = resp.get("body");
+        if (body == null) return ImmutableList.of();
+        String q = (query != null && !query.trim().isEmpty()) ? query.trim() : "$";
+        return queryJSON(body.toString(), q);
     }
 
     public static synchronized Map<String, Object> httpGet(final String url, final String username, final String password, final long refreshTimeSeconds) {

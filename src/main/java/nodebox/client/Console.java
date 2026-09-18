@@ -35,9 +35,11 @@ public class Console extends JFrame implements WindowListener, FocusListener {
     private JTextField consolePrompt;
     private Document messagesDocument;
 
+    private JTextPane consoleMessages;
+
     public Console() {
         super("Console");
-        JTextPane consoleMessages = new JTextPane();
+        consoleMessages = new JTextPane();
         consoleMessages.setMargin(new Insets(2, 20, 2, 5));
         consoleMessages.setFont(Theme.EDITOR_FONT);
         consoleMessages.setEditable(false);
@@ -53,6 +55,7 @@ public class Console extends JFrame implements WindowListener, FocusListener {
 
         consolePrompt = new JTextField();
         consolePrompt.setFont(Theme.EDITOR_FONT);
+        updateTheme();
         Keymap defaultKeymap = JTextComponent.getKeymap(JTextComponent.DEFAULT_KEYMAP);
         Keymap keymap = JTextComponent.addKeymap(null, defaultKeymap);
         keymap.addActionForKeyStroke(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0), new EnterAction());
@@ -71,6 +74,33 @@ public class Console extends JFrame implements WindowListener, FocusListener {
         addWindowListener(this);
     }
 
+    public void updateTheme() {
+        if (Theme.isDark()) {
+            if (consoleMessages != null) {
+                consoleMessages.setBackground(new Color(24, 24, 27));
+                consoleMessages.setForeground(new Color(228, 228, 231));
+                consoleMessages.setCaretColor(new Color(228, 228, 231));
+            }
+            if (consolePrompt != null) {
+                consolePrompt.setBackground(new Color(36, 36, 40));
+                consolePrompt.setForeground(new Color(228, 228, 231));
+                consolePrompt.setCaretColor(new Color(228, 228, 231));
+            }
+        } else {
+            if (consoleMessages != null) {
+                consoleMessages.setBackground(Color.WHITE);
+                consoleMessages.setForeground(Color.BLACK);
+                consoleMessages.setCaretColor(Color.BLACK);
+            }
+            if (consolePrompt != null) {
+                consolePrompt.setBackground(Color.WHITE);
+                consolePrompt.setForeground(Color.BLACK);
+                consolePrompt.setCaretColor(Color.BLACK);
+            }
+        }
+        repaint();
+    }
+
     private void addMessage(String s, AttributeSet attributes) {
         try {
             messagesDocument.insertString(messagesDocument.getLength(), s, attributes);
@@ -80,7 +110,13 @@ public class Console extends JFrame implements WindowListener, FocusListener {
     }
 
     private void addMessage(String s) {
-        addMessage(s, ATTRIBUTES_REGULAR);
+        if (Theme.isDark()) {
+            SimpleAttributeSet attrs = new SimpleAttributeSet();
+            attrs.addAttribute(StyleConstants.ColorConstants.Foreground, new Color(228, 228, 231));
+            addMessage(s, attrs);
+        } else {
+            addMessage(s, ATTRIBUTES_REGULAR);
+        }
     }
 
     private void addCommandMessage(String s) {
@@ -214,7 +250,7 @@ public class Console extends JFrame implements WindowListener, FocusListener {
 
     private class PromptBorder implements Border {
         public void paintBorder(Component component, Graphics g, int x, int y, int width, int height) {
-            g.setColor(PROMPT_BORDER_TOP_COLOR);
+            g.setColor(Theme.isDark() ? new Color(55, 55, 60) : PROMPT_BORDER_TOP_COLOR);
             g.drawLine(0, 0, width, 0);
             g.setColor(PROMPT_COLOR);
             g.drawString(">", 5, 14);

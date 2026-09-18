@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<ndbx formatVersion="17" type="file" uuid="a1b2c3d4-e5f6-7890-abcd-ef1234567801">
+    <property name="canvasHeight" value="842"/>
+    <property name="canvasWidth" value="595"/>
+    <node name="root" prototype="core.network" renderedChild="combine1">
+        <node name="grid" position="1.00,1.00" prototype="corevector.modular_grid">
+            <port name="width" type="float" value="535.0"/>
+            <port name="height" type="float" value="782.0"/>
+            <port name="columns" type="int" value="4"/>
+            <port name="rows" type="int" value="6"/>
+            <port name="colGutter" type="float" value="12.0"/>
+            <port name="rowGutter" type="float" value="12.0"/>
+            <port name="topMargin" type="float" value="30.0"/>
+            <port name="bottomMargin" type="float" value="30.0"/>
+            <port name="leftMargin" type="float" value="30.0"/>
+            <port name="rightMargin" type="float" value="30.0"/>
+            <port name="outputMode" type="string" value="lines"/>
+        </node>
+        <node name="headline" position="4.00,1.00" prototype="corevector.fit_text">
+            <port name="text" type="string" value="BAUHAUS 100"/>
+            <port name="fontName" type="string" value="Helvetica"/>
+            <port name="position" type="point" value="0.00,-280.00"/>
+            <port name="width" type="float" value="500.0"/>
+            <port name="height" type="float" value="80.0"/>
+            <port name="alignment" type="string" value="CENTER"/>
+        </node>
+        <node name="body" position="4.00,3.00" prototype="corevector.typeset">
+            <port name="text" type="string" value="Form follows function. The Bauhaus style tends to feature simple geometric shapes like rectangles and spheres, without elaborate decorations. Buildings, furniture, and fonts often feature rounded corners and sometimes noticeable walls."/>
+            <port name="fontName" type="string" value="Helvetica"/>
+            <port name="fontSize" type="float" value="12.0"/>
+            <port name="alignment" type="string" value="LEFT"/>
+            <port name="position" type="point" value="-240.00,120.00"/>
+            <port name="width" type="float" value="480.0"/>
+            <port name="lineHeight" type="float" value="1.5"/>
+            <port name="columns" type="int" value="2"/>
+            <port name="columnGutter" type="float" value="24.0"/>
+        </node>
+        <node name="color_grid" position="1.00,3.00" prototype="corevector.colorize">
+            <port name="stroke" type="color" value="#00000022"/>
+            <port name="strokeWidth" type="float" value="1.0"/>
+        </node>
+        <node name="color_text" position="4.00,5.00" prototype="corevector.colorize">
+            <port name="fill" type="color" value="#111827ff"/>
+        </node>
+        <node name="combine1" position="2.00,7.00" prototype="list.combine"/>
+        <conn input="color_grid.shape" output="grid"/>
+        <conn input="combine1.list1" output="color_grid"/>
+        <conn input="color_text.shape" output="headline"/>
+        <conn input="combine1.list2" output="color_text"/>
+        <conn input="combine1.list3" output="body"/>
+    </node>
+</ndbx>

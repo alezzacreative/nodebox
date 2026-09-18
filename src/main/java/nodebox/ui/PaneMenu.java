@@ -55,9 +55,7 @@ public class PaneMenu extends JComponent implements MouseListener {
         // Full width minus left side and right side
         int contentWidth = getWidth() - 9 - 21;
         if (isEnabled()) {
-            g.drawImage(paneMenuLeft, 0, 0, null);
-            g.drawImage(paneMenuBackground, 9, 0, contentWidth, 21, null);
-            g.drawImage(paneMenuRight, 9 + contentWidth, 0, null);
+            Theme.paintPaneMenu(g2, 0, 0, getWidth(), 21);
         }
 
         g2.setFont(Theme.SMALL_BOLD_FONT);

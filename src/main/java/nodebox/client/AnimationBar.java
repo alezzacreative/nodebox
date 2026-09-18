@@ -116,7 +116,7 @@ public class AnimationBar extends JPanel implements ChangeListener {
 
     @Override
     protected void paintComponent(Graphics g) {
-        g.drawImage(animationBackground, 0, 0, getWidth(), ANIMATION_BAR_HEIGHT, null);
+        Theme.paintAnimationBackground((Graphics2D) g, 0, 0, getWidth(), ANIMATION_BAR_HEIGHT);
     }
 
 }

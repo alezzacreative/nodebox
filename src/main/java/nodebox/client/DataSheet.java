@@ -2,6 +2,7 @@ package nodebox.client;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import nodebox.ui.Theme;
 import nodebox.util.IOrderedFields;
 
 import javax.swing.*;
@@ -30,11 +31,37 @@ public class DataSheet extends JPanel implements OutputView {
         table.setAutoCreateRowSorter(true);
         table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
         table.addColumn(new TableColumn(0));
+        updateTheme();
         tableModel = new DataTableModel();
         table.setModel(tableModel);
         JScrollPane tableScroll = new JScrollPane(table);
         tableScroll.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
         add(tableScroll, BorderLayout.CENTER);
+    }
+
+    public void updateTheme() {
+        boolean dark = Theme.isDark();
+        if (dark) {
+            table.setBackground(new Color(24, 24, 27));
+            table.setForeground(new Color(228, 228, 231));
+            table.setGridColor(new Color(45, 45, 50));
+            if (table.getTableHeader() != null) {
+                table.getTableHeader().setDefaultRenderer(new nodebox.ui.ThemeTableHeaderUI.ThemeTableHeaderRenderer());
+                table.getTableHeader().setBackground(new Color(36, 36, 42));
+                table.getTableHeader().setForeground(new Color(228, 228, 231));
+            }
+        } else {
+            table.setBackground(Color.WHITE);
+            table.setForeground(new Color(30, 30, 32));
+            table.setGridColor(new Color(220, 220, 225));
+            if (table.getTableHeader() != null) {
+                table.getTableHeader().setDefaultRenderer(new nodebox.ui.ThemeTableHeaderUI.ThemeTableHeaderRenderer());
+                table.getTableHeader().setBackground(new Color(236, 236, 240));
+                table.getTableHeader().setForeground(new Color(30, 30, 32));
+            }
+        }
+        table.repaint();
+        repaint();
     }
 
     public void setOutputValues(List<?> objects) {
@@ -58,15 +85,19 @@ public class DataSheet extends JPanel implements OutputView {
 
     private final class DataCellRenderer extends DefaultTableCellRenderer {
 
-        private Color zebraColor = UIManager.getColor("Table.alternateRowColor");
-
         @Override
         public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int rowIndex, int columnIndex) {
             setValue(value);
-            if (rowIndex % 2 == 0) {
-                setBackground(null);
+            Color zebra = Theme.isDark() ? new Color(34, 34, 38) : UIManager.getColor("Table.alternateRowColor");
+            if (isSelected) {
+                setBackground(Theme.isDark() ? new Color(63, 63, 70) : table.getSelectionBackground());
+                setForeground(Theme.isDark() ? Color.WHITE : table.getSelectionForeground());
+            } else if (rowIndex % 2 == 0) {
+                setBackground(Theme.isDark() ? new Color(24, 24, 27) : null);
+                setForeground(Theme.isDark() ? new Color(228, 228, 231) : Color.BLACK);
             } else {
-                setBackground(zebraColor);
+                setBackground(zebra);
+                setForeground(Theme.isDark() ? new Color(228, 228, 231) : Color.BLACK);
             }
             return this;
         }
