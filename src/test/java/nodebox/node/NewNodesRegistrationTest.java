@@ -45,6 +45,12 @@ public class NewNodesRegistrationTest {
         assertTrue("corevector.boolean node must be registered", coreVectorLib.getRoot().hasChild("boolean"));
         assertTrue("corevector.stroke_style node must be registered", coreVectorLib.getRoot().hasChild("stroke_style"));
         assertTrue("corevector.morph node must be registered", coreVectorLib.getRoot().hasChild("morph"));
+        assertTrue("corevector.seamless_tile node must be registered", coreVectorLib.getRoot().hasChild("seamless_tile"));
+        assertTrue("corevector.hex_grid node must be registered", coreVectorLib.getRoot().hasChild("hex_grid"));
+        assertTrue("corevector.kaleidoscope node must be registered", coreVectorLib.getRoot().hasChild("kaleidoscope"));
+        assertTrue("corevector.wave_warp node must be registered", coreVectorLib.getRoot().hasChild("wave_warp"));
+        assertTrue("corevector.bulge_pinch node must be registered", coreVectorLib.getRoot().hasChild("bulge_pinch"));
+        assertTrue("corevector.stripes node must be registered", coreVectorLib.getRoot().hasChild("stripes"));
 
         // 3. Data library
         NodeLibrary dataLib = NodeLibrary.load(new File("libraries/data/data.ndbx"), repo);
@@ -58,5 +64,11 @@ public class NewNodesRegistrationTest {
         assertTrue("color.extract_palette node must be registered", colorLib.getRoot().hasChild("extract_palette"));
         assertTrue("color.blend_mode node must be registered", colorLib.getRoot().hasChild("blend_mode"));
         assertTrue("color.conic_gradient node must be registered", colorLib.getRoot().hasChild("conic_gradient"));
+
+        // 5. Device library
+        NodeLibrary deviceLib = NodeLibrary.load(new File("libraries/device/device.ndbx"), repo);
+        assertTrue("device.sound_file node must be registered", deviceLib.getRoot().hasChild("sound_file"));
+        assertTrue("device.sound_spectrum node must be registered", deviceLib.getRoot().hasChild("sound_spectrum"));
+        assertTrue("device.sound_info node must be registered", deviceLib.getRoot().hasChild("sound_info"));
     }
 }

@@ -64,5 +64,21 @@
             <port name="context" type="context"
                   description="The internal execution context."/>
         </node>
+        <node category="device" description="Load sound files (mp3, wav, aif, flac, ogg) and extract normalized waveform samples." function="device/soundWaveform" image="audio_wave.png" name="sound_file" outputRange="list" outputType="float" position="1.00,7.00">
+            <port name="file" label="Sound File" range="value" type="string" value="" widget="file" description="Path to the sound file (mp3, wav, aif, etc.)."/>
+            <port min="1.0" max="10000.0" name="samples" label="Sample Count" range="value" type="int" value="100" widget="int" description="Number of amplitude points to extract."/>
+            <port name="channel" label="Channel" range="value" type="string" value="mix" widget="menu" description="Audio channel.">
+                <menu key="mix" label="Mix (Mono)"/>
+                <menu key="left" label="Left Channel"/>
+                <menu key="right" label="Right Channel"/>
+            </port>
+        </node>
+        <node category="device" description="Extract audio frequency spectrum band magnitudes from a sound file." function="device/soundSpectrum" image="audio_analysis.png" name="sound_spectrum" outputRange="list" outputType="float" position="3.00,7.00">
+            <port name="file" label="Sound File" range="value" type="string" value="" widget="file" description="Path to the sound file (mp3, wav, aif, etc.)."/>
+            <port min="2.0" max="256.0" name="bands" label="Frequency Bands" range="value" type="int" value="16" widget="int" description="Number of frequency bands."/>
+        </node>
+        <node category="device" description="Get metadata and volume metrics (duration, sample rate, RMS) for a sound file." function="device/soundInfo" image="beat_detect.png" name="sound_info" outputType="data" position="5.00,7.00">
+            <port name="file" label="Sound File" range="value" type="string" value="" widget="file" description="Path to the sound file."/>
+        </node>
     </node>
 </ndbx>

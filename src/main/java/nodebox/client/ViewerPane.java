@@ -19,7 +19,7 @@ public class ViewerPane extends Pane {
     private final PaneHeader paneHeader;
     private final Viewer viewer;
     private final DataSheet dataSheet;
-    private final NButton handlesCheck, pointsCheck, pointNumbersCheck, originCheck, boundsCheck, renderRootCheck;
+    private final NButton handlesCheck, pointsCheck, pointNumbersCheck, originCheck, boundsCheck, repeatCheck, renderRootCheck;
     private final JPanel contentPanel;
     private OutputView currentView;
     private Iterable<?> outputValues;
@@ -33,6 +33,7 @@ public class ViewerPane extends Pane {
         contentPanel = new JPanel(new CardLayout());
         viewer = new Viewer();
         viewer.setDocument(document);
+        viewer.setViewerPane(this);
         document.addZoomListener(viewer);
         currentView = viewer;
         dataSheet = new DataSheet();
@@ -62,6 +63,9 @@ public class ViewerPane extends Pane {
         originCheck.setActionMethod(this, "toggleOrigin");
         boundsCheck = new NButton(NButton.Mode.CHECK, "Bounds");
         boundsCheck.setActionMethod(this, "toggleBounds");
+        repeatCheck = new NButton(NButton.Mode.CHECK, "Repeat 3\u00D73");
+        repeatCheck.setActionMethod(this, "toggleRepeat");
+        repeatCheck.setToolTipText("Toggle 3\u00D73 Infinite Wallpaper Repeat preview (T)");
         renderRootCheck = new NButton(NButton.Mode.CHECK, "Render Root");
         renderRootCheck.setActionMethod(this, "toggleRenderRoot");
         renderRootCheck.setChecked(true);
@@ -70,6 +74,7 @@ public class ViewerPane extends Pane {
         paneHeader.add(pointNumbersCheck);
         paneHeader.add(originCheck);
         paneHeader.add(boundsCheck);
+        paneHeader.add(repeatCheck);
         paneHeader.add(renderRootCheck);
         add(paneHeader, BorderLayout.NORTH);
     }
@@ -103,6 +108,16 @@ public class ViewerPane extends Pane {
 
     public void toggleBounds() {
         viewer.setShowBounds(boundsCheck.isChecked());
+    }
+
+    public void toggleRepeat() {
+        viewer.setInfiniteTileMode(repeatCheck.isChecked());
+    }
+
+    public void updateRepeatCheck(boolean checked) {
+        if (repeatCheck != null) {
+            repeatCheck.setChecked(checked);
+        }
     }
 
     public void toggleRenderRoot() {

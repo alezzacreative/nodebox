@@ -593,5 +593,63 @@
             <port min="0.0" max="100.0" name="jitterScale" label="Jitter Scale %" range="value" type="float" value="0.0" widget="float" description="Random scale variation percentage."/>
             <port name="seed" label="Random Seed" range="value" type="int" value="1" widget="int" description="Random variation seed."/>
         </node>
+        <node description="Automatically wrap and duplicate vector shapes across tile edges to create seamless repeating patterns." function="corevector/seamlessTile" image="copy.png" name="seamless_tile" outputType="geometry" position="10.00,21.00" prototype="generator">
+            <port name="shape" range="value" type="geometry" widget="none" description="Input vector shapes to tile."/>
+            <port min="1.0" name="width" label="Width" range="value" type="float" value="400.0" widget="float" description="Tile boundary width."/>
+            <port min="1.0" name="height" label="Height" range="value" type="float" value="400.0" widget="float" description="Tile boundary height."/>
+            <port name="clip" label="Clip to Tile" range="value" type="boolean" value="false" widget="toggle" description="Clip outer edges strictly to tile boundary."/>
+            <port name="center" label="Center" range="value" type="point" value="0.00,0.00" widget="point" description="Center of the tile."/>
+        </node>
+        <node description="Generate an interlocking hexagonal honeycomb lattice of polygon cells." function="corevector/hexGrid" image="grid.png" name="hex_grid" outputType="geometry" position="10.00,22.00" prototype="generator">
+            <port min="1.0" name="columns" label="Columns" range="value" type="int" value="5" widget="int" description="Number of columns."/>
+            <port min="1.0" name="rows" label="Rows" range="value" type="int" value="5" widget="int" description="Number of rows."/>
+            <port min="1.0" name="radius" label="Radius" range="value" type="float" value="50.0" widget="float" description="Hexagon cell outer radius."/>
+            <port min="0.0" name="spacing" label="Spacing" range="value" type="float" value="0.0" widget="float" description="Gap spacing between hexagon cells."/>
+            <port name="orientation" label="Orientation" range="value" type="string" value="pointy" widget="menu" description="Hexagon orientation.">
+                <menu key="pointy" label="Pointy Top"/>
+                <menu key="flat" label="Flat Top"/>
+            </port>
+            <port name="center" label="Center" range="value" type="point" value="0.00,0.00" widget="point" description="Center of the hexagonal grid."/>
+        </node>
+        <node description="Create N-fold rotational and bilateral mirror symmetry for mandalas, rosettes, and Moroccan tiles." function="corevector/kaleidoscope" image="resample.png" name="kaleidoscope" outputType="geometry" position="10.00,23.00" prototype="generator">
+            <port name="shape" range="value" type="geometry" widget="none" description="Input shape motif to mirror."/>
+            <port min="2.0" max="64.0" name="segments" label="Segments" range="value" type="int" value="8" widget="int" description="Number of symmetrical radial segments."/>
+            <port name="center" label="Center" range="value" type="point" value="0.00,0.00" widget="point" description="Center axis of symmetry."/>
+            <port name="mirror" label="Mirror Alternates" range="value" type="boolean" value="true" widget="toggle" description="Reflect alternate segments for bilateral symmetry."/>
+        </node>
+        <node description="Deform vector shapes and typography along mathematical wave functions." function="corevector/waveWarp" image="resample.png" name="wave_warp" outputType="geometry" position="10.00,24.00" prototype="generator">
+            <port name="shape" range="value" type="geometry" widget="none" description="Vector shape to warp."/>
+            <port name="axis" label="Axis" range="value" type="string" value="horizontal" widget="menu" description="Wave displacement axis.">
+                <menu key="horizontal" label="Horizontal (Y by X)"/>
+                <menu key="vertical" label="Vertical (X by Y)"/>
+                <menu key="radial" label="Radial (Ripples)"/>
+            </port>
+            <port name="waveType" label="Waveform" range="value" type="string" value="sine" widget="menu" description="Mathematical wave profile.">
+                <menu key="sine" label="Sine Wave"/>
+                <menu key="triangle" label="Triangle Wave"/>
+                <menu key="square" label="Square Wave"/>
+            </port>
+            <port name="amplitude" label="Amplitude" range="value" type="float" value="20.0" widget="float" description="Displacement peak magnitude."/>
+            <port min="0.0001" name="frequency" label="Frequency" range="value" type="float" value="0.02" widget="float" description="Wave cycle frequency."/>
+            <port name="phase" label="Phase" range="value" type="float" value="0.0" widget="float" description="Wave phase offset in degrees."/>
+        </node>
+        <node description="Radial lens deformer creating spherical bulge magnification or pinch distortion." function="corevector/bulgePinch" image="scatter.png" name="bulge_pinch" outputType="geometry" position="10.00,25.00" prototype="generator">
+            <port name="shape" range="value" type="geometry" widget="none" description="Shape to deform."/>
+            <port name="center" label="Center" range="value" type="point" value="0.00,0.00" widget="point" description="Focal center of distortion."/>
+            <port min="1.0" name="radius" label="Radius" range="value" type="float" value="200.0" widget="float" description="Radius of lens influence."/>
+            <port min="-1.0" max="2.0" name="strength" label="Strength" range="value" type="float" value="0.6" widget="float" description="Distortion magnitude (&gt; 0 bulge, &lt; 0 pinch)."/>
+        </node>
+        <node description="Generate parametric linear stripes, checkerboards, or sunburst rays." function="corevector/stripes" image="grid.png" name="stripes" outputType="geometry" position="10.00,26.00" prototype="generator">
+            <port min="1.0" name="width" label="Width" range="value" type="float" value="600.0" widget="float" description="Total pattern width."/>
+            <port min="1.0" name="height" label="Height" range="value" type="float" value="600.0" widget="float" description="Total pattern height."/>
+            <port min="1.0" name="count" label="Count" range="value" type="int" value="10" widget="int" description="Number of stripe divisions."/>
+            <port min="0.01" max="0.99" name="ratio" label="Ratio" range="value" type="float" value="0.5" widget="float" description="Stripe width vs gap balance."/>
+            <port name="angle" label="Angle" range="value" type="float" value="0.0" widget="float" description="Pattern rotation angle in degrees."/>
+            <port name="type" label="Type" range="value" type="string" value="linear" widget="menu" description="Stripe pattern layout.">
+                <menu key="linear" label="Linear Stripes"/>
+                <menu key="checker" label="Checkerboard"/>
+                <menu key="radial" label="Radial Sunburst"/>
+            </port>
+        </node>
     </node>
 </ndbx>

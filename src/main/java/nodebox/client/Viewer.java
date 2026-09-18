@@ -48,6 +48,17 @@ public class Viewer extends ZoomableView implements OutputView, Zoom, MouseListe
 
     private boolean gpuAcceleration = Application.isGpuAccelerationEnabled();
 
+    private boolean infiniteTileMode = false;
+    private ViewerPane viewerPane;
+
+    private boolean isAltScrubbing = false;
+    private Point altScrubStartScreenPoint;
+    private Object altScrubStartValue;
+    private String altScrubPortName;
+    private String altScrubNodePath;
+    private String altScrubPortType;
+    private double altScrubCurrentValue = 0;
+
     public static final String FRAME_GUIDE_OFF = "Off";
     public static final String FRAME_GUIDE_1_1 = "1:1";
     public static final String FRAME_GUIDE_16_9 = "16:9";
@@ -73,6 +84,19 @@ public class Viewer extends ZoomableView implements OutputView, Zoom, MouseListe
     private Rectangle2D canvasBounds = new Rectangle2D.Double(-500, -500, 1000, 1000);
     private Class valuesClass;
     private Visualizer currentVisualizer = VisualizerFactory.getDefaultVisualizer();
+
+    public void setViewerPane(ViewerPane viewerPane) {
+        this.viewerPane = viewerPane;
+    }
+
+    public void setInfiniteTileMode(boolean infiniteTileMode) {
+        this.infiniteTileMode = infiniteTileMode;
+        repaint();
+    }
+
+    public boolean isInfiniteTileMode() {
+        return infiniteTileMode;
+    }
 
     public Viewer() {
         super(MIN_ZOOM, MAX_ZOOM);
@@ -274,6 +298,50 @@ public class Viewer extends ZoomableView implements OutputView, Zoom, MouseListe
                 return;
             }
         }
+        // Alt + Left-Drag: Quick numeric parameter scrubbing on active node
+        if (e.getButton() == MouseEvent.BUTTON1 && e.isAltDown() && modalMode == ModalTransformMode.NONE) {
+            Node activeNode = (document != null) ? document.getActiveNode() : null;
+            if (activeNode != null) {
+                String[] candidateNames = new String[]{
+                        "count", "amount", "radius", "spacing", "wavelength", "amplitude", "strength",
+                        "copies", "width", "height", "size", "distance", "angle", "offset", "start", "end", "value"
+                };
+                nodebox.node.Port targetPort = null;
+                for (String name : candidateNames) {
+                    if (activeNode.hasInput(name)) {
+                        nodebox.node.Port p = activeNode.getInput(name);
+                        if (nodebox.node.Port.TYPE_INT.equals(p.getType()) || nodebox.node.Port.TYPE_FLOAT.equals(p.getType())) {
+                            targetPort = p;
+                            break;
+                        }
+                    }
+                }
+                if (targetPort == null) {
+                    for (nodebox.node.Port p : activeNode.getInputs()) {
+                        if (nodebox.node.Port.TYPE_INT.equals(p.getType()) || nodebox.node.Port.TYPE_FLOAT.equals(p.getType())) {
+                            targetPort = p;
+                            break;
+                        }
+                    }
+                }
+                if (targetPort != null) {
+                    isAltScrubbing = true;
+                    altScrubStartScreenPoint = e.getPoint();
+                    altScrubPortName = targetPort.getName();
+                    altScrubPortType = targetPort.getType();
+                    altScrubStartValue = targetPort.getValue();
+                    altScrubNodePath = Node.path(document.getActiveNetworkPath(), activeNode);
+                    if (altScrubStartValue instanceof Number) {
+                        altScrubCurrentValue = ((Number) altScrubStartValue).doubleValue();
+                    } else {
+                        altScrubCurrentValue = 0;
+                    }
+                    repaint();
+                    return;
+                }
+            }
+        }
+
         // We register the mouse press as an edit since it can trigger a change to the node.
         if (e.isPopupTrigger()) return;
 
@@ -312,6 +380,11 @@ public class Viewer extends ZoomableView implements OutputView, Zoom, MouseListe
     }
 
     public void mouseReleased(MouseEvent e) {
+        if (isAltScrubbing) {
+            isAltScrubbing = false;
+            repaint();
+            return;
+        }
         // We register the mouse release as an edit since it can trigger a change to the node.
         if (e.isPopupTrigger()) return;
         if (handle != null)
@@ -337,6 +410,25 @@ public class Viewer extends ZoomableView implements OutputView, Zoom, MouseListe
         lastMousePosition = pointForEvent(e);
         if (modalMode != ModalTransformMode.NONE) {
             updateModalTransform(lastMousePosition, e.isShiftDown());
+            return;
+        }
+        if (isAltScrubbing) {
+            double dx = e.getPoint().x - altScrubStartScreenPoint.x;
+            if (nodebox.node.Port.TYPE_INT.equals(altScrubPortType)) {
+                double step = e.isShiftDown() ? 0.1 : 1.0;
+                long startVal = (altScrubStartValue instanceof Number) ? ((Number) altScrubStartValue).longValue() : 0L;
+                long newVal = Math.round(startVal + dx * step);
+                altScrubCurrentValue = newVal;
+                document.setValue(altScrubNodePath, altScrubPortName, newVal);
+            } else {
+                double step = e.isShiftDown() ? 0.05 : 0.5;
+                double startVal = (altScrubStartValue instanceof Number) ? ((Number) altScrubStartValue).doubleValue() : 0.0;
+                double newVal = startVal + dx * step;
+                newVal = Math.round(newVal * 100.0) / 100.0;
+                altScrubCurrentValue = newVal;
+                document.setValue(altScrubNodePath, altScrubPortName, (float) newVal);
+            }
+            repaint();
             return;
         }
         // We register the mouse drag as an edit since it can trigger a change to the node.
@@ -396,6 +488,13 @@ public class Viewer extends ZoomableView implements OutputView, Zoom, MouseListe
                     return;
                 } else if (e.getKeyCode() == KeyEvent.VK_S) {
                     startModalTransform(ModalTransformMode.SCALE, lastMousePosition);
+                    e.consume();
+                    return;
+                } else if (e.getKeyCode() == KeyEvent.VK_T) {
+                    setInfiniteTileMode(!infiniteTileMode);
+                    if (viewerPane != null) {
+                        viewerPane.updateRepeatCheck(infiniteTileMode);
+                    }
                     e.consume();
                     return;
                 }
@@ -685,12 +784,56 @@ public class Viewer extends ZoomableView implements OutputView, Zoom, MouseListe
             paintSelectionGizmo(g2);
         }
         paintModalHud(g2);
+        paintAltScrubHud(g2);
     }
 
 
     public void paintObjects(Graphics2D g) {
-        if (currentVisualizer != null)
-            currentVisualizer.draw(g, outputValues);
+        if (currentVisualizer != null) {
+            if (infiniteTileMode) {
+                double tileW = canvasBounds != null ? canvasBounds.getWidth() : 1000;
+                double tileH = canvasBounds != null ? canvasBounds.getHeight() : 1000;
+                if (tileW <= 0) tileW = 1000;
+                if (tileH <= 0) tileH = 1000;
+
+                AffineTransform orig = g.getTransform();
+                Composite origComp = g.getComposite();
+
+                // Draw 8 adjacent tiles with slight transparency (0.75f)
+                for (int dy = -1; dy <= 1; dy++) {
+                    for (int dx = -1; dx <= 1; dx++) {
+                        if (dx == 0 && dy == 0) continue;
+                        AffineTransform tileTrans = new AffineTransform(orig);
+                        tileTrans.translate(dx * tileW, dy * tileH);
+                        g.setTransform(tileTrans);
+                        g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.75f));
+                        currentVisualizer.draw(g, outputValues);
+                    }
+                }
+                // Draw central tile
+                g.setTransform(orig);
+                g.setComposite(origComp);
+                currentVisualizer.draw(g, outputValues);
+
+                // Draw subtle dashed boundary grid separating the 3x3 tiles
+                Stroke origStroke = g.getStroke();
+                Color origColor = g.getColor();
+                g.setColor(new Color(245, 158, 11, 150)); // Amber dashed grid
+                g.setStroke(new BasicStroke(1.0f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER, 10f, new float[]{6f, 6f}, 0f));
+                double left = (canvasBounds != null ? canvasBounds.getX() : -tileW / 2.0);
+                double top = (canvasBounds != null ? canvasBounds.getY() : -tileH / 2.0);
+                for (int i = -1; i <= 2; i++) {
+                    int vx = (int) Math.round(left + i * tileW);
+                    g.drawLine(vx, (int) Math.round(top - tileH), vx, (int) Math.round(top + 2 * tileH));
+                    int hy = (int) Math.round(top + i * tileH);
+                    g.drawLine((int) Math.round(left - tileW), hy, (int) Math.round(left + 2 * tileW), hy);
+                }
+                g.setStroke(origStroke);
+                g.setColor(origColor);
+            } else {
+                currentVisualizer.draw(g, outputValues);
+            }
+        }
     }
 
     private void paintPoints(Graphics2D g) {
@@ -936,6 +1079,48 @@ public class Viewer extends ZoomableView implements OutputView, Zoom, MouseListe
         g.setColor(origColor);
     }
 
+    private void paintAltScrubHud(Graphics2D g) {
+        if (!isAltScrubbing || altScrubPortName == null) return;
+
+        String title = "ALT-SCRUB: " + altScrubPortName;
+        String valStr = nodebox.node.Port.TYPE_INT.equals(altScrubPortType) ?
+                String.valueOf(Math.round(altScrubCurrentValue)) :
+                String.format(java.util.Locale.US, "%.2f", altScrubCurrentValue);
+        String tip = "Drag \u2194 left/right  |  Shift: Fine precision";
+
+        g.setFont(Theme.SMALL_BOLD_FONT);
+        FontMetrics fm = g.getFontMetrics();
+        int lineH = fm.getHeight();
+        int pad = 10;
+        int badgeW = 280;
+        int badgeH = lineH * 2 + pad * 2 + 2;
+        int badgeX = getWidth() / 2 - badgeW / 2;
+        int badgeY = 20;
+
+        Stroke origStroke = g.getStroke();
+        Color origColor = g.getColor();
+
+        g.setColor(new Color(15, 23, 42, 235));
+        g.fillRoundRect(badgeX, badgeY, badgeW, badgeH, 8, 8);
+        g.setColor(new Color(56, 189, 248, 220)); // Sky blue border
+        g.setStroke(new BasicStroke(1.5f));
+        g.drawRoundRect(badgeX, badgeY, badgeW, badgeH, 8, 8);
+
+        g.setColor(new Color(56, 189, 248));
+        g.drawString(title, badgeX + pad, badgeY + pad + fm.getAscent());
+
+        g.setFont(Theme.SMALL_MONO_FONT);
+        g.setColor(Color.WHITE);
+        g.drawString("=  " + valStr, badgeX + pad + fm.stringWidth(title) + 12, badgeY + pad + fm.getAscent());
+
+        g.setFont(Theme.SMALL_FONT);
+        g.setColor(new Color(148, 163, 184));
+        g.drawString(tip, badgeX + pad, badgeY + pad + lineH + 2 + fm.getAscent());
+
+        g.setStroke(origStroke);
+        g.setColor(origColor);
+    }
+
     public void paintBounds(Graphics2D g) {
         if (showBounds) {
             g.setColor(Color.DARK_GRAY);
@@ -1057,6 +1242,18 @@ public class Viewer extends ZoomableView implements OutputView, Zoom, MouseListe
             });
             gizmoItem.setSelected(showSelectionGizmo);
             viewerMenu.add(gizmoItem);
+
+            JCheckBoxMenuItem repeatItem = new JCheckBoxMenuItem(new AbstractAction("3\u00D73 Infinite Repeat (T)") {
+                public void actionPerformed(ActionEvent e) {
+                    setInfiniteTileMode(!infiniteTileMode);
+                    if (viewerPane != null) {
+                        viewerPane.updateRepeatCheck(infiniteTileMode);
+                    }
+                }
+            });
+            repeatItem.setSelected(infiniteTileMode);
+            viewerMenu.add(repeatItem);
+
             Theme.applyPopupMenuTheme(viewerMenu);
             viewerMenu.show(Viewer.this, e.getX(), e.getY());
         }

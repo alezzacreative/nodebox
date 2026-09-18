@@ -65,6 +65,7 @@ public class CoreVectorFunctions {
                 "modularGrid", "alignDistribute", "packCircles", "roughen", "longShadow", "extrude3d",
                 "booleanOperation", "strokeStyle", "morph", "artboard",
                 "roundCorners", "duplicator",
+                "seamlessTile", "hexGrid", "kaleidoscope", "waveWarp", "bulgePinch", "stripes",
                 "fourPointHandle", "freehandHandle", "lineAngleHandle", "lineHandle", "pointHandle", "snapHandle",
                 "translateHandle");
     }
@@ -1795,6 +1796,30 @@ public class CoreVectorFunctions {
         return Duplicator.duplicate(g, mode, count, spacing, angle, columns, rows, spacingX, spacingY, stagger,
                 radius, startAngle, endAngle, orient, growthRate, angleStep,
                 stepRotation, stepScale, stepOpacity, jitterPos, jitterRot, jitterScale, seed);
+    }
+
+    public static Geometry seamlessTile(IGeometry shape, double width, double height, boolean clip, Point center) {
+        return nodebox.graphics.PatternNodes.seamlessTile(shape, width, height, clip, center);
+    }
+
+    public static Geometry hexGrid(long columns, long rows, double radius, double spacing, String orientation, Point center) {
+        return nodebox.graphics.PatternNodes.hexGrid(columns, rows, radius, spacing, orientation, center);
+    }
+
+    public static Geometry kaleidoscope(IGeometry shape, long segments, Point center, boolean mirror) {
+        return nodebox.graphics.PatternNodes.kaleidoscope(shape, segments, center, mirror);
+    }
+
+    public static Geometry waveWarp(IGeometry shape, String axis, String waveType, double amplitude, double frequency, double phase) {
+        return nodebox.graphics.PatternNodes.waveWarp(shape, axis, waveType, amplitude, frequency, phase);
+    }
+
+    public static Geometry bulgePinch(IGeometry shape, Point center, double radius, double strength) {
+        return nodebox.graphics.PatternNodes.bulgePinch(shape, center, radius, strength);
+    }
+
+    public static Geometry stripes(double width, double height, long count, double ratio, double angle, String type) {
+        return nodebox.graphics.PatternNodes.stripes(width, height, count, ratio, angle, type);
     }
 
 }

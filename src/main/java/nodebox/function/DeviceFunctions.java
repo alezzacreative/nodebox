@@ -21,7 +21,8 @@ public class DeviceFunctions {
 
     static {
         LIBRARY = JavaLibrary.ofClass("device", DeviceFunctions.class, "mousePosition", "receiveOSC", "sendOSC",
-                "audioAnalysis", "audioLogAvg", "audioWave", "beatDetect");
+                "audioAnalysis", "audioLogAvg", "audioWave", "beatDetect",
+                "soundWaveform", "soundSpectrum", "soundInfo");
     }
 
     public static Point mousePosition(NodeContext context) {
@@ -226,6 +227,18 @@ public class DeviceFunctions {
         mb.put("snare", beat.isSnare());
         mb.put("hat", beat.isHat());
         return mb.build();
+    }
+
+    public static List<Double> soundWaveform(String file, long samples, String channel) {
+        return nodebox.util.SoundFileUtils.getWaveform(file, samples, channel);
+    }
+
+    public static List<Double> soundSpectrum(String file, long bands) {
+        return nodebox.util.SoundFileUtils.getSpectrum(file, bands);
+    }
+
+    public static Map<String, Object> soundInfo(String file) {
+        return nodebox.util.SoundFileUtils.getAudioInfo(file);
     }
 }
 
