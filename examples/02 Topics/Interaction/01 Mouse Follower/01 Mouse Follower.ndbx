@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<ndbx formatVersion="22" type="file" uuid="a1b2c3d4-e5f6-7890-abcd-ef1234567813">
+    <property name="canvasHeight" value="800"/>
+    <property name="canvasWidth" value="800"/>
+    <node name="root" prototype="core.network" renderedChild="combine_all">
+        <node name="mouse" position="1.00,1.00" prototype="device.mouse_position"/>
+        <node name="pointer_ring" position="1.00,3.00" prototype="corevector.ellipse">
+            <port name="width" type="float" value="70.0"/>
+            <port name="height" type="float" value="70.0"/>
+        </node>
+        <node name="pointer_core" position="3.00,3.00" prototype="corevector.ellipse">
+            <port name="width" type="float" value="16.0"/>
+            <port name="height" type="float" value="16.0"/>
+        </node>
+        <node name="color_ring" position="1.00,5.00" prototype="corevector.colorize">
+            <port name="stroke" type="color" value="#06b6d4ff"/>
+            <port name="strokeWidth" type="float" value="2.5"/>
+        </node>
+        <node name="color_core" position="3.00,5.00" prototype="corevector.colorize">
+            <port name="fill" type="color" value="#38bdf8ff"/>
+        </node>
+        <node name="grid1" position="6.00,2.00" prototype="corevector.grid">
+            <port name="columns" type="int" value="12"/>
+            <port name="rows" type="int" value="12"/>
+            <port name="width" type="float" value="600.0"/>
+            <port name="height" type="float" value="600.0"/>
+        </node>
+        <node name="dots" position="6.00,3.00" prototype="corevector.ellipse">
+            <port name="width" type="float" value="6.0"/>
+            <port name="height" type="float" value="6.0"/>
+        </node>
+        <node name="color_dots" position="6.00,5.00" prototype="corevector.colorize">
+            <port name="fill" type="color" value="#47556988"/>
+        </node>
+        <node name="title" position="3.00,7.00" prototype="corevector.fit_text">
+            <port name="text" type="string" value="INTERACTIVE REALTIME MOUSE POINTER"/>
+            <port name="fontName" type="string" value="Helvetica"/>
+            <port name="position" type="point" value="0.00,-330.00"/>
+            <port name="width" type="float" value="580.0"/>
+            <port name="height" type="float" value="32.0"/>
+            <port name="alignment" type="string" value="CENTER"/>
+        </node>
+        <node name="color_title" position="3.00,8.00" prototype="corevector.colorize">
+            <port name="fill" type="color" value="#38bdf8ff"/>
+        </node>
+        <node name="combine_all" position="3.00,9.00" prototype="list.combine"/>
+        <conn input="pointer_ring.position" output="mouse"/>
+        <conn input="pointer_core.position" output="mouse"/>
+        <conn input="dots.position" output="grid1"/>
+        <conn input="color_ring.shape" output="pointer_ring"/>
+        <conn input="color_core.shape" output="pointer_core"/>
+        <conn input="color_dots.shape" output="dots"/>
+        <conn input="color_title.shape" output="title"/>
+        <conn input="combine_all.list1" output="color_dots"/>
+        <conn input="combine_all.list2" output="color_ring"/>
+        <conn input="combine_all.list3" output="color_core"/>
+        <conn input="combine_all.list4" output="color_title"/>
+    </node>
+</ndbx>

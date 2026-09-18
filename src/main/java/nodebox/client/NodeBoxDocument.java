@@ -1076,6 +1076,10 @@ public class NodeBoxDocument extends JFrame implements WindowListener, HandleDel
 
         Node n = getActiveNode();
         createHandleForActiveNode();
+        if (viewerPane != null && viewerPane.getViewer() != null) {
+            viewerPane.getViewer().setShowSelectionGizmo(n != null);
+            viewerPane.getViewer().repaint();
+        }
         //editorPane.setActiveNode(activeNode);
         // TODO If we draw handles again, we should repaint the viewer pane.
         //viewerPane.repaint(); // For the handle
@@ -1125,6 +1129,10 @@ public class NodeBoxDocument extends JFrame implements WindowListener, HandleDel
                 handle.update();
                 viewerPane.setHandle(handle);
             } else {
+                viewerPane.setHandle(null);
+            }
+        } else {
+            if (viewerPane != null) {
                 viewerPane.setHandle(null);
             }
         }

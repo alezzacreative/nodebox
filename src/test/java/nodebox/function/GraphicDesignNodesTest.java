@@ -265,15 +265,22 @@ public class GraphicDesignNodesTest {
                 NodeLibrary.loadSystemLibrary("list"),
                 NodeLibrary.loadSystemLibrary("data"),
                 NodeLibrary.loadSystemLibrary("corevector"),
+                NodeLibrary.loadSystemLibrary("device"),
                 NodeLibrary.loadSystemLibrary("network")
         );
         File[] exampleFiles = new File[]{
                 new File("examples/02 Topics/Graphic Design/04 Multi-Artboard Campaign/04 Multi-Artboard Campaign.ndbx"),
                 new File("examples/02 Topics/Graphic Design/05 Generative Halftone Poster/05 Generative Halftone Poster.ndbx"),
                 new File("examples/02 Topics/Graphic Design/06 3D Typography and Shadow/06 3D Typography and Shadow.ndbx"),
+                new File("examples/02 Topics/Graphic Design/07 Geometric Round Corners/07 Geometric Round Corners.ndbx"),
+                new File("examples/02 Topics/Graphic Design/08 Perceptual Color Gradient/08 Perceptual Color Gradient.ndbx"),
                 new File("examples/02 Topics/Generative Design/Organic Flow Field/Organic Flow Field.ndbx"),
                 new File("examples/02 Topics/Generative Design/Voronoi Crystal Mesh/Voronoi Crystal Mesh.ndbx"),
-                new File("examples/02 Topics/Generative Design/L-System Fractal Tree/L-System Fractal Tree.ndbx")
+                new File("examples/02 Topics/Generative Design/L-System Fractal Tree/L-System Fractal Tree.ndbx"),
+                new File("examples/02 Topics/Generative Design/07 Procedural Duplicator/07 Procedural Duplicator.ndbx"),
+                new File("examples/02 Topics/Generative Design/08 Particle Attractor/08 Particle Attractor.ndbx"),
+                new File("examples/02 Topics/Interaction/01 Mouse Follower/01 Mouse Follower.ndbx"),
+                new File("examples/02 Topics/Interaction/02 Audio Beat Pulse/02 Audio Beat Pulse.ndbx")
         };
         for (File f : exampleFiles) {
             assertTrue("Example file should exist: " + f.getPath(), f.exists());

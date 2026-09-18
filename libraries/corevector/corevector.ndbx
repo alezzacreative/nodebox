@@ -570,9 +570,8 @@
                 <menu key="grid" label="Grid (Matrix)"/>
                 <menu key="radial" label="Radial (Circle)"/>
                 <menu key="spiral" label="Spiral (Phyllotaxis)"/>
-                <menu key="along_path" label="Along Path"/>
             </port>
-            <port min="1.0" max="1000.0" name="count" label="Count" range="value" type="int" value="5" widget="int" description="Number of copies (linear, radial, spiral, along_path)."/>
+            <port min="1.0" max="1000.0" name="count" label="Count" range="value" type="int" value="5" widget="int" description="Number of copies (linear, radial, spiral)."/>
             <port min="0.0" name="spacing" label="Spacing" range="value" type="float" value="50.0" widget="float" description="Linear clone distance."/>
             <port name="angle" label="Angle" range="value" type="float" value="0.0" widget="float" description="Linear clone direction in degrees."/>
             <port min="1.0" max="100.0" name="columns" label="Columns" range="value" type="int" value="3" widget="int" description="Grid column count."/>
@@ -586,7 +585,6 @@
             <port name="orient" label="Orient to Path" range="value" type="boolean" value="true" widget="toggle" description="Rotate clones to align with trajectory tangent."/>
             <port min="0.1" name="growthRate" label="Growth Rate" range="value" type="float" value="3.0" widget="float" description="Spiral outward expansion rate."/>
             <port name="angleStep" label="Angle Step" range="value" type="float" value="137.5" widget="float" description="Spiral angle step (137.5 for golden ratio / phyllotaxis)."/>
-            <port name="targetPath" range="value" type="geometry" widget="none" description="Guide path curve for along_path mode."/>
             <port name="stepRotation" label="Step Rotation" range="value" type="float" value="0.0" widget="float" description="Cumulative rotation per clone in degrees."/>
             <port name="stepScale" label="Step Scale %" range="value" type="float" value="0.0" widget="float" description="Cumulative scaling percentage per clone."/>
             <port min="0.0" max="1.0" name="stepOpacity" label="End Opacity" range="value" type="float" value="1.0" widget="float" description="Fade opacity across clones (1.0 = no fade)."/>

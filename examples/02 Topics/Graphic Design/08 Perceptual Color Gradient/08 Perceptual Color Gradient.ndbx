@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<ndbx formatVersion="22" type="file" uuid="a1b2c3d4-e5f6-7890-abcd-ef1234567812">
+    <property name="canvasHeight" value="800"/>
+    <property name="canvasWidth" value="800"/>
+    <node name="root" prototype="core.network" renderedChild="combine_all">
+        <node name="rect_bar" position="1.00,1.00" prototype="corevector.rect">
+            <port name="width" type="float" value="480.0"/>
+            <port name="height" type="float" value="28.0"/>
+        </node>
+        <node name="grid_bars" position="1.00,2.00" prototype="corevector.grid">
+            <port name="columns" type="int" value="1"/>
+            <port name="rows" type="int" value="15"/>
+            <port name="spacingY" type="float" value="34.0"/>
+        </node>
+        <node name="sample_pos" position="5.00,1.00" prototype="math.sample">
+            <port name="amount" type="int" value="15"/>
+            <port name="start" type="float" value="0.0"/>
+            <port name="end" type="float" value="1.0"/>
+        </node>
+        <node name="make_stops" position="8.00,1.00" prototype="string.make_strings">
+            <port name="string" type="string" value="#6366f1,#8b5cf6,#ec4899,#f43f5e,#fbbf24"/>
+            <port name="separator" type="string" value=","/>
+        </node>
+        <node name="gradient1" position="6.00,3.00" prototype="color.gradient">
+            <port name="colorSpace" type="string" value="oklab"/>
+        </node>
+        <node name="colorize_bars" position="1.00,5.00" prototype="corevector.colorize"/>
+        <node name="title" position="3.00,5.00" prototype="corevector.fit_text">
+            <port name="text" type="string" value="OKLAB PERCEPTUAL MULTI-STOP GRADIENT"/>
+            <port name="fontName" type="string" value="Helvetica"/>
+            <port name="position" type="point" value="0.00,-320.00"/>
+            <port name="width" type="float" value="580.0"/>
+            <port name="height" type="float" value="32.0"/>
+            <port name="alignment" type="string" value="CENTER"/>
+        </node>
+        <node name="color_title" position="3.00,7.00" prototype="corevector.colorize">
+            <port name="fill" type="color" value="#8b5cf6ff"/>
+        </node>
+        <node name="combine_all" position="2.00,9.00" prototype="list.combine"/>
+        <conn input="rect_bar.position" output="grid_bars"/>
+        <conn input="gradient1.colors" output="make_stops"/>
+        <conn input="gradient1.position" output="sample_pos"/>
+        <conn input="colorize_bars.fill" output="gradient1"/>
+        <conn input="colorize_bars.shape" output="rect_bar"/>
+        <conn input="color_title.shape" output="title"/>
+        <conn input="combine_all.list1" output="colorize_bars"/>
+        <conn input="combine_all.list2" output="color_title"/>
+    </node>
+</ndbx>

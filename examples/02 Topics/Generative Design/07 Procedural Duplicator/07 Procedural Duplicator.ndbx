@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<ndbx formatVersion="22" type="file" uuid="a1b2c3d4-e5f6-7890-abcd-ef1234567810">
+    <property name="canvasHeight" value="800"/>
+    <property name="canvasWidth" value="800"/>
+    <node name="root" prototype="core.network" renderedChild="combine_all">
+        <node name="seed_shape" position="1.00,1.00" prototype="corevector.rect">
+            <port name="width" type="float" value="35.0"/>
+            <port name="height" type="float" value="12.0"/>
+        </node>
+        <node name="duplicator" position="1.00,3.00" prototype="corevector.duplicator">
+            <port name="mode" type="string" value="spiral"/>
+            <port name="count" type="int" value="75"/>
+            <port name="growthRate" type="float" value="2.8"/>
+            <port name="angleStep" type="float" value="137.5"/>
+            <port name="stepRotation" type="float" value="8.0"/>
+            <port name="stepScale" type="float" value="1.5"/>
+            <port name="stepOpacity" type="float" value="0.9"/>
+        </node>
+        <node name="colorize_dupes" position="1.00,5.00" prototype="corevector.colorize">
+            <port name="fill" type="color" value="#06b6d4cc"/>
+            <port name="stroke" type="color" value="#38bdf8ff"/>
+            <port name="strokeWidth" type="float" value="1.0"/>
+        </node>
+        <node name="title" position="5.00,2.00" prototype="corevector.fit_text">
+            <port name="text" type="string" value="PROCEDURAL PHYLLOTAXIS DUPLICATOR"/>
+            <port name="fontName" type="string" value="Helvetica"/>
+            <port name="position" type="point" value="0.00,-330.00"/>
+            <port name="width" type="float" value="600.0"/>
+            <port name="height" type="float" value="32.0"/>
+            <port name="alignment" type="string" value="CENTER"/>
+        </node>
+        <node name="color_title" position="5.00,4.00" prototype="corevector.colorize">
+            <port name="fill" type="color" value="#38bdf8ff"/>
+        </node>
+        <node name="combine_all" position="3.00,7.00" prototype="list.combine"/>
+        <conn input="duplicator.shape" output="seed_shape"/>
+        <conn input="colorize_dupes.shape" output="duplicator"/>
+        <conn input="color_title.shape" output="title"/>
+        <conn input="combine_all.list1" output="colorize_dupes"/>
+        <conn input="combine_all.list2" output="color_title"/>
+    </node>
+</ndbx>

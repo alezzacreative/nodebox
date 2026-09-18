@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<ndbx formatVersion="22" type="file" uuid="a1b2c3d4-e5f6-7890-abcd-ef1234567811">
+    <property name="canvasHeight" value="800"/>
+    <property name="canvasWidth" value="800"/>
+    <node name="root" prototype="core.network" renderedChild="combine_all">
+        <node name="star1" position="1.00,1.00" prototype="corevector.star">
+            <port name="points" type="int" value="8"/>
+            <port name="outer" type="float" value="220.0"/>
+            <port name="inner" type="float" value="110.0"/>
+        </node>
+        <node name="round_corners" position="1.00,3.00" prototype="corevector.round_corners">
+            <port name="radius" type="float" value="24.0"/>
+            <port name="type" type="string" value="round"/>
+        </node>
+        <node name="colorize_star" position="1.00,5.00" prototype="corevector.colorize">
+            <port name="fill" type="color" value="#f43f5e22"/>
+            <port name="stroke" type="color" value="#fb7185ff"/>
+            <port name="strokeWidth" type="float" value="3.5"/>
+        </node>
+        <node name="title" position="5.00,2.00" prototype="corevector.fit_text">
+            <port name="text" type="string" value="GEOMETRIC CORNER ROUNDING"/>
+            <port name="fontName" type="string" value="Helvetica"/>
+            <port name="position" type="point" value="0.00,-320.00"/>
+            <port name="width" type="float" value="540.0"/>
+            <port name="height" type="float" value="32.0"/>
+            <port name="alignment" type="string" value="CENTER"/>
+        </node>
+        <node name="color_title" position="5.00,4.00" prototype="corevector.colorize">
+            <port name="fill" type="color" value="#f43f5eff"/>
+        </node>
+        <node name="combine_all" position="3.00,7.00" prototype="list.combine"/>
+        <conn input="round_corners.shape" output="star1"/>
+        <conn input="colorize_star.shape" output="round_corners"/>
+        <conn input="color_title.shape" output="title"/>
+        <conn input="combine_all.list1" output="colorize_star"/>
+        <conn input="combine_all.list2" output="color_title"/>
+    </node>
+</ndbx>

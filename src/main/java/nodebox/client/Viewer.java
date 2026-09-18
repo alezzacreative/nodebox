@@ -276,8 +276,39 @@ public class Viewer extends ZoomableView implements OutputView, Zoom, MouseListe
         }
         // We register the mouse press as an edit since it can trigger a change to the node.
         if (e.isPopupTrigger()) return;
-        if (handle != null)
-            handle.mousePressed(pointForEvent(e));
+
+        boolean handleHit = false;
+        if (handle != null) {
+            handleHit = handle.mousePressed(pointForEvent(e));
+        }
+
+        // Check if user clicked on empty canvas space to deselect
+        if (e.getButton() == MouseEvent.BUTTON1 && !isPanning() && !handleHit) {
+            nodebox.graphics.Point docPt = pointForEvent(e);
+            nodebox.graphics.Rect bounds = getOutputGeometryBounds();
+            boolean hitGeometry = false;
+            if (bounds != null) {
+                double margin = 6.0 / Math.max(0.001, getViewScale());
+                nodebox.graphics.Rect hitRect = new nodebox.graphics.Rect(
+                        bounds.getX() - margin,
+                        bounds.getY() - margin,
+                        bounds.getWidth() + 2 * margin,
+                        bounds.getHeight() + 2 * margin);
+                hitGeometry = hitRect.contains(docPt);
+            }
+
+            if (!hitGeometry) {
+                // Clicked on empty canvas space: deselect active node and hide bounding box
+                if (document != null) {
+                    document.setActiveNode((Node) null);
+                    if (document.getNetworkView() != null) {
+                        document.getNetworkView().deselectAll();
+                    }
+                }
+                showSelectionGizmo = false;
+                repaint();
+            }
+        }
     }
 
     public void mouseReleased(MouseEvent e) {
@@ -650,7 +681,7 @@ public class Viewer extends ZoomableView implements OutputView, Zoom, MouseListe
         // document coordinates they operate on, so their decorations stay a constant pixel size.
         paintHandle(g2);
         paintOrigin(g2);
-        if (showSelectionGizmo) {
+        if (showSelectionGizmo && document != null && document.getActiveNode() != null) {
             paintSelectionGizmo(g2);
         }
         paintModalHud(g2);
@@ -721,8 +752,8 @@ public class Viewer extends ZoomableView implements OutputView, Zoom, MouseListe
         return showSelectionGizmo;
     }
 
-    public void paintSelectionGizmo(Graphics2D g) {
-        if (outputValues == null || outputValues.isEmpty()) return;
+    public nodebox.graphics.Rect getOutputGeometryBounds() {
+        if (outputValues == null || outputValues.isEmpty()) return null;
 
         double minX = Double.MAX_VALUE, maxX = -Double.MAX_VALUE;
         double minY = Double.MAX_VALUE, maxY = -Double.MAX_VALUE;
@@ -748,7 +779,18 @@ public class Viewer extends ZoomableView implements OutputView, Zoom, MouseListe
             }
         }
 
-        if (!hasGeometry || minX >= maxX || minY >= maxY) return;
+        if (!hasGeometry || minX >= maxX || minY >= maxY) return null;
+        return new nodebox.graphics.Rect(minX, minY, maxX - minX, maxY - minY);
+    }
+
+    public void paintSelectionGizmo(Graphics2D g) {
+        nodebox.graphics.Rect bounds = getOutputGeometryBounds();
+        if (bounds == null) return;
+
+        double minX = bounds.getX();
+        double maxX = bounds.getX() + bounds.getWidth();
+        double minY = bounds.getY();
+        double maxY = bounds.getY() + bounds.getHeight();
 
         // Project document bounding box to screen space
         Point2D pTopLeft = getViewTransform().transform(new Point2D.Double(minX, minY), null);

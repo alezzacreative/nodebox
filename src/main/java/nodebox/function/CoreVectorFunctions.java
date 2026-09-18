@@ -1787,14 +1787,13 @@ public class CoreVectorFunctions {
     public static List<Geometry> duplicator(IGeometry shape, String mode, long count, double spacing, double angle,
                                             long columns, long rows, double spacingX, double spacingY, double stagger,
                                             double radius, double startAngle, double endAngle, boolean orient,
-                                            double growthRate, double angleStep, IGeometry targetPath,
+                                            double growthRate, double angleStep,
                                             double stepRotation, double stepScale, double stepOpacity,
                                             double jitterPos, double jitterRot, double jitterScale, long seed) {
         if (shape == null) return ImmutableList.of();
         Geometry g = shape instanceof Geometry ? (Geometry) shape : ((Path) shape).asGeometry();
-        Geometry pathGeo = targetPath != null ? (targetPath instanceof Geometry ? (Geometry) targetPath : ((Path) targetPath).asGeometry()) : null;
         return Duplicator.duplicate(g, mode, count, spacing, angle, columns, rows, spacingX, spacingY, stagger,
-                radius, startAngle, endAngle, orient, growthRate, angleStep, pathGeo,
+                radius, startAngle, endAngle, orient, growthRate, angleStep,
                 stepRotation, stepScale, stepOpacity, jitterPos, jitterRot, jitterScale, seed);
     }
 
