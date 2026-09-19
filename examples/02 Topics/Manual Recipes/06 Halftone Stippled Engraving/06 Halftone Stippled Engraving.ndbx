@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<ndbx formatVersion="22" type="file" uuid="a1111111-2222-3333-4444-555555555506">
+    <property name="canvasHeight" value="800"/>
+    <property name="canvasWidth" value="800"/>
+    <node name="root" prototype="core.network" renderedChild="combine_all">
+        <node name="guilloche_frame" position="1.00,1.00" prototype="corevector.guilloche">
+            <port name="R" type="float" value="200.0"/>
+            <port name="r" type="float" value="50.0"/>
+            <port name="d" type="float" value="35.0"/>
+            <port name="steps" type="int" value="720"/>
+        </node>
+        <node name="style_frame" position="1.00,3.00" prototype="corevector.stroke_style">
+            <port name="strokeWidth" type="float" value="1.0"/>
+        </node>
+        <node name="color_frame" position="1.00,5.00" prototype="corevector.colorize">
+            <port name="stroke" type="color" value="#10b981aa"/>
+        </node>
+        <node name="dots_grid" position="5.00,1.00" prototype="corevector.grid">
+            <port name="columns" type="int" value="20"/>
+            <port name="rows" type="int" value="20"/>
+            <port name="width" type="float" value="350.0"/>
+            <port name="height" type="float" value="350.0"/>
+        </node>
+        <node name="stipple_dots" position="5.00,3.00" prototype="corevector.ellipse">
+            <port name="width" type="float" value="10.0"/>
+            <port name="height" type="float" value="10.0"/>
+        </node>
+        <node name="color_dots" position="5.00,5.00" prototype="corevector.colorize">
+            <port name="fill" type="color" value="#34d399dd"/>
+        </node>
+        <node name="engrave_title" position="9.00,2.00" prototype="corevector.fit_text">
+            <port name="text" type="string" value="RECIPE 6: BANKNOTE GUILLOCHE &amp; STIPPLE"/>
+            <port name="fontName" type="string" value="Helvetica"/>
+            <port name="position" type="point" value="0.00,-330.00"/>
+            <port name="width" type="float" value="650.0"/>
+            <port name="height" type="float" value="26.0"/>
+            <port name="alignment" type="string" value="CENTER"/>
+        </node>
+        <node name="color_title" position="9.00,4.00" prototype="corevector.colorize">
+            <port name="fill" type="color" value="#34d399ff"/>
+        </node>
+        <node name="combine_all" position="5.00,8.00" prototype="list.combine"/>
+        <conn input="style_frame.shape" output="guilloche_frame"/>
+        <conn input="color_frame.shape" output="style_frame"/>
+        <conn input="stipple_dots.position" output="dots_grid"/>
+        <conn input="color_dots.shape" output="stipple_dots"/>
+        <conn input="color_title.shape" output="engrave_title"/>
+        <conn input="combine_all.list1" output="color_frame"/>
+        <conn input="combine_all.list2" output="color_dots"/>
+        <conn input="combine_all.list3" output="color_title"/>
+    </node>
+</ndbx>

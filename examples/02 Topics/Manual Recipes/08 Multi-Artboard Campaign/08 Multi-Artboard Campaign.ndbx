@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<ndbx formatVersion="22" type="file" uuid="a1111111-2222-3333-4444-555555555508">
+    <property name="canvasHeight" value="1000"/>
+    <property name="canvasWidth" value="1200"/>
+    <node name="root" prototype="core.network" renderedChild="combine_artboards">
+        <node name="master_graphic" position="1.00,1.00" prototype="corevector.star">
+            <port name="points" type="int" value="12"/>
+            <port name="outer" type="float" value="120.0"/>
+            <port name="inner" type="float" value="60.0"/>
+        </node>
+        <node name="color_graphic" position="1.00,3.00" prototype="corevector.colorize">
+            <port name="fill" type="color" value="#6366f1ee"/>
+            <port name="stroke" type="color" value="#818cf8ff"/>
+            <port name="strokeWidth" type="float" value="2.0"/>
+        </node>
+        <node name="artboard_story" position="1.00,5.00" prototype="corevector.artboard">
+            <port name="name" type="string" value="instagram_story"/>
+            <port name="preset" type="string" value="Instagram Story"/>
+            <port name="position" type="point" value="-400.00,0.00"/>
+            <port name="clip" type="boolean" value="true"/>
+            <port name="showFrame" type="boolean" value="true"/>
+        </node>
+        <node name="artboard_post" position="5.00,5.00" prototype="corevector.artboard">
+            <port name="name" type="string" value="instagram_post"/>
+            <port name="preset" type="string" value="Instagram Post"/>
+            <port name="position" type="point" value="300.00,0.00"/>
+            <port name="clip" type="boolean" value="true"/>
+            <port name="showFrame" type="boolean" value="true"/>
+        </node>
+        <node name="combine_artboards" position="3.00,7.00" prototype="list.combine"/>
+        <conn input="color_graphic.shape" output="master_graphic"/>
+        <conn input="artboard_story.shape" output="color_graphic"/>
+        <conn input="artboard_post.shape" output="color_graphic"/>
+        <conn input="combine_artboards.list1" output="artboard_story"/>
+        <conn input="combine_artboards.list2" output="artboard_post"/>
+    </node>
+</ndbx>

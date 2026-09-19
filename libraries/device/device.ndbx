@@ -72,10 +72,13 @@
                 <menu key="left" label="Left Channel"/>
                 <menu key="right" label="Right Channel"/>
             </port>
+            <port name="context" type="context" description="The internal execution context."/>
         </node>
         <node category="device" description="Extract audio frequency spectrum band magnitudes from a sound file." function="device/soundSpectrum" image="audio_analysis.png" name="sound_spectrum" outputRange="list" outputType="float" position="3.00,7.00">
             <port name="file" label="Sound File" range="value" type="string" value="" widget="file" description="Path to the sound file (mp3, wav, aif, etc.)."/>
             <port min="2.0" max="256.0" name="bands" label="Frequency Bands" range="value" type="int" value="16" widget="int" description="Number of frequency bands."/>
+            <port min="0.1" max="10.0" name="speed" label="Playback Speed" range="value" type="float" value="1.0" widget="float" description="Playback speed multiplier."/>
+            <port name="context" type="context" description="The internal execution context."/>
         </node>
         <node category="device" description="Get metadata and volume metrics (duration, sample rate, RMS) for a sound file." function="device/soundInfo" image="beat_detect.png" name="sound_info" outputType="data" position="5.00,7.00">
             <port name="file" label="Sound File" range="value" type="string" value="" widget="file" description="Path to the sound file."/>

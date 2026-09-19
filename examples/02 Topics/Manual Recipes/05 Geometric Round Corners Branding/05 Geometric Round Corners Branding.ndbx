@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<ndbx formatVersion="22" type="file" uuid="a1111111-2222-3333-4444-555555555505">
+    <property name="canvasHeight" value="800"/>
+    <property name="canvasWidth" value="800"/>
+    <node name="root" prototype="core.network" renderedChild="combine_all">
+        <node name="star_base" position="1.00,1.00" prototype="corevector.star">
+            <port name="points" type="int" value="8"/>
+            <port name="outer" type="float" value="160.0"/>
+            <port name="inner" type="float" value="70.0"/>
+        </node>
+        <node name="round_corners" position="1.00,3.00" prototype="corevector.round_corners">
+            <port name="radius" type="float" value="24.0"/>
+            <port name="type" type="string" value="squircle"/>
+            <port name="clamp" type="boolean" value="true"/>
+        </node>
+        <node name="extrude" position="1.00,5.00" prototype="corevector.extrude_3d">
+            <port name="depth" type="float" value="25.0"/>
+            <port name="angle" type="float" value="30.0"/>
+            <port name="shading" type="boolean" value="true"/>
+        </node>
+        <node name="color_logo" position="1.00,7.00" prototype="corevector.colorize">
+            <port name="fill" type="color" value="#f59e0bcc"/>
+            <port name="stroke" type="color" value="#fbbf24ff"/>
+            <port name="strokeWidth" type="float" value="1.5"/>
+        </node>
+        <node name="brand_title" position="5.00,3.00" prototype="corevector.fit_text">
+            <port name="text" type="string" value="RECIPE 5: VARIABLE SQUIRCLE BRANDING"/>
+            <port name="fontName" type="string" value="Helvetica"/>
+            <port name="position" type="point" value="0.00,-330.00"/>
+            <port name="width" type="float" value="640.0"/>
+            <port name="height" type="float" value="28.0"/>
+            <port name="alignment" type="string" value="CENTER"/>
+        </node>
+        <node name="color_title" position="5.00,5.00" prototype="corevector.colorize">
+            <port name="fill" type="color" value="#fbbf24ff"/>
+        </node>
+        <node name="combine_all" position="3.00,9.00" prototype="list.combine"/>
+        <conn input="round_corners.shape" output="star_base"/>
+        <conn input="extrude.shape" output="round_corners"/>
+        <conn input="color_logo.shape" output="extrude"/>
+        <conn input="color_title.shape" output="brand_title"/>
+        <conn input="combine_all.list1" output="color_logo"/>
+        <conn input="combine_all.list2" output="color_title"/>
+    </node>
+</ndbx>

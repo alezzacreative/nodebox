@@ -229,12 +229,14 @@ public class DeviceFunctions {
         return mb.build();
     }
 
-    public static List<Double> soundWaveform(String file, long samples, String channel) {
-        return nodebox.util.SoundFileUtils.getWaveform(file, samples, channel);
+    public static List<Double> soundWaveform(String file, long samples, String channel, NodeContext context) {
+        double frame = context != null ? context.getFrame() : 1.0;
+        return nodebox.util.SoundFileUtils.getWaveform(file, samples, channel, frame, 24.0);
     }
 
-    public static List<Double> soundSpectrum(String file, long bands) {
-        return nodebox.util.SoundFileUtils.getSpectrum(file, bands);
+    public static List<Double> soundSpectrum(String file, long bands, double speed, NodeContext context) {
+        double frame = context != null ? context.getFrame() : 1.0;
+        return nodebox.util.SoundFileUtils.getSpectrum(file, bands, frame, 24.0, speed);
     }
 
     public static Map<String, Object> soundInfo(String file) {

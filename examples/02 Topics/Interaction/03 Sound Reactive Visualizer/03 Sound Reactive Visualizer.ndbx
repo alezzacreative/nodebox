@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<ndbx formatVersion="22" type="file" uuid="c3d4e5f6-a7b8-9012-cdef-123456789032">
+    <property name="canvasHeight" value="800"/>
+    <property name="canvasWidth" value="800"/>
+    <node name="root" prototype="core.network" renderedChild="combine_all">
+        <node name="audio_loader" position="1.00,1.00" prototype="device.sound_spectrum">
+            <port name="bands" type="int" value="32"/>
+        </node>
+        <node name="scale_bars" position="1.00,3.00" prototype="math.multiply">
+            <port name="value2" type="float" value="400.0"/>
+        </node>
+        <node name="grid_bars" position="5.00,1.00" prototype="corevector.grid">
+            <port name="columns" type="int" value="32"/>
+            <port name="rows" type="int" value="1"/>
+            <port name="width" type="float" value="580.0"/>
+            <port name="height" type="float" value="0.0"/>
+        </node>
+        <node name="wave_bars" position="1.00,5.00" prototype="corevector.rect">
+            <port name="width" type="float" value="14.0"/>
+            <port name="height" type="float" value="120.0"/>
+        </node>
+        <node name="color_spectrum" position="1.00,7.00" prototype="corevector.colorize">
+            <port name="fill" type="color" value="#06b6d4ee"/>
+            <port name="stroke" type="color" value="#22d3eeff"/>
+            <port name="strokeWidth" type="float" value="1.0"/>
+        </node>
+        <node name="title" position="5.00,3.00" prototype="corevector.fit_text">
+            <port name="text" type="string" value="AUDIO FILE SPECTRUM VISUALIZER"/>
+            <port name="fontName" type="string" value="Helvetica"/>
+            <port name="position" type="point" value="0.00,-330.00"/>
+            <port name="width" type="float" value="600.0"/>
+            <port name="height" type="float" value="30.0"/>
+            <port name="alignment" type="string" value="CENTER"/>
+        </node>
+        <node name="color_title" position="5.00,5.00" prototype="corevector.colorize">
+            <port name="fill" type="color" value="#22d3eeff"/>
+        </node>
+        <node name="combine_all" position="3.00,9.00" prototype="list.combine"/>
+        <conn input="scale_bars.value1" output="audio_loader"/>
+        <conn input="wave_bars.position" output="grid_bars"/>
+        <conn input="wave_bars.height" output="scale_bars"/>
+        <conn input="color_spectrum.shape" output="wave_bars"/>
+        <conn input="color_title.shape" output="title"/>
+        <conn input="combine_all.list1" output="color_spectrum"/>
+        <conn input="combine_all.list2" output="color_title"/>
+    </node>
+</ndbx>

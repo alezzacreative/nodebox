@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<ndbx formatVersion="22" type="file" uuid="a1111111-2222-3333-4444-555555555504">
+    <property name="canvasHeight" value="800"/>
+    <property name="canvasWidth" value="800"/>
+    <node name="root" prototype="core.network" renderedChild="combine_all">
+        <node name="seed_grid" position="1.00,1.00" prototype="corevector.grid">
+            <port name="columns" type="int" value="25"/>
+            <port name="rows" type="int" value="25"/>
+            <port name="width" type="float" value="600.0"/>
+            <port name="height" type="float" value="600.0"/>
+        </node>
+        <node name="flow_streamlines" position="1.00,3.00" prototype="corevector.flow_field">
+            <port name="steps" type="int" value="50"/>
+            <port name="stepLength" type="float" value="4.0"/>
+            <port name="noiseScale" type="float" value="0.004"/>
+        </node>
+        <node name="style_strokes" position="1.00,5.00" prototype="corevector.stroke_style">
+            <port name="strokeWidth" type="float" value="1.2"/>
+            <port name="dashArray" type="string" value="8, 4"/>
+            <port name="cap" type="string" value="round"/>
+        </node>
+        <node name="color_flow" position="1.00,7.00" prototype="corevector.colorize">
+            <port name="stroke" type="color" value="#38bdf8bb"/>
+        </node>
+        <node name="poster_title" position="5.00,3.00" prototype="corevector.fit_text">
+            <port name="text" type="string" value="RECIPE 4: NOISE FLOW FIELD POSTER"/>
+            <port name="fontName" type="string" value="Helvetica"/>
+            <port name="position" type="point" value="0.00,-330.00"/>
+            <port name="width" type="float" value="620.0"/>
+            <port name="height" type="float" value="30.0"/>
+            <port name="alignment" type="string" value="CENTER"/>
+        </node>
+        <node name="color_title" position="5.00,5.00" prototype="corevector.colorize">
+            <port name="fill" type="color" value="#f8fafcff"/>
+        </node>
+        <node name="combine_all" position="3.00,9.00" prototype="list.combine"/>
+        <conn input="flow_streamlines.seedPoints" output="seed_grid"/>
+        <conn input="style_strokes.shape" output="flow_streamlines"/>
+        <conn input="color_flow.shape" output="style_strokes"/>
+        <conn input="color_title.shape" output="poster_title"/>
+        <conn input="combine_all.list1" output="color_flow"/>
+        <conn input="combine_all.list2" output="color_title"/>
+    </node>
+</ndbx>

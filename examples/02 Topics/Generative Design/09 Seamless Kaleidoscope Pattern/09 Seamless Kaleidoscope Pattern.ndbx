@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<ndbx formatVersion="22" type="file" uuid="b2c3d4e5-f6a7-8901-bcde-f12345678921">
+    <property name="canvasHeight" value="800"/>
+    <property name="canvasWidth" value="800"/>
+    <node name="root" prototype="core.network" renderedChild="combine_all">
+        <node name="base_petal" position="1.00,1.00" prototype="corevector.ellipse">
+            <port name="position" type="point" value="45.00,0.00"/>
+            <port name="width" type="float" value="90.0"/>
+            <port name="height" type="float" value="32.0"/>
+        </node>
+        <node name="rosette" position="1.00,3.00" prototype="corevector.kaleidoscope">
+            <port name="segments" type="int" value="12"/>
+            <port name="mirror" type="boolean" value="true"/>
+        </node>
+        <node name="tiled_pattern" position="1.00,5.00" prototype="corevector.seamless_tile">
+            <port name="width" type="float" value="300.0"/>
+            <port name="height" type="float" value="300.0"/>
+            <port name="clip" type="boolean" value="false"/>
+        </node>
+        <node name="color_pattern" position="1.00,7.00" prototype="corevector.colorize">
+            <port name="fill" type="color" value="#8b5cf6cc"/>
+            <port name="stroke" type="color" value="#f43f5eff"/>
+            <port name="strokeWidth" type="float" value="1.5"/>
+        </node>
+        <node name="title" position="5.00,3.00" prototype="corevector.fit_text">
+            <port name="text" type="string" value="SEAMLESS KALEIDOSCOPE WALLPAPER PATTERN"/>
+            <port name="fontName" type="string" value="Helvetica"/>
+            <port name="position" type="point" value="0.00,-340.00"/>
+            <port name="width" type="float" value="650.0"/>
+            <port name="height" type="float" value="30.0"/>
+            <port name="alignment" type="string" value="CENTER"/>
+        </node>
+        <node name="color_title" position="5.00,5.00" prototype="corevector.colorize">
+            <port name="fill" type="color" value="#f43f5eff"/>
+        </node>
+        <node name="combine_all" position="3.00,9.00" prototype="list.combine"/>
+        <conn input="rosette.shape" output="base_petal"/>
+        <conn input="tiled_pattern.shape" output="rosette"/>
+        <conn input="color_pattern.shape" output="tiled_pattern"/>
+        <conn input="color_title.shape" output="title"/>
+        <conn input="combine_all.list1" output="color_pattern"/>
+        <conn input="combine_all.list2" output="color_title"/>
+    </node>
+</ndbx>

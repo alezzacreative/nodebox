@@ -40,26 +40,38 @@ public final class SoundFileUtils {
      * Load audio file and extract normalized waveform samples across the track.
      */
     public static List<Double> getWaveform(String filePath, long sampleCount, String channel) {
-        CachedAudio audio = loadAudio(filePath);
-        if (audio == null) return Collections.emptyList();
+        return getWaveform(filePath, sampleCount, channel, 1.0, 24.0);
+    }
 
-        int targetSamples = (int) Math.max(1, Math.min(sampleCount, 10000));
+    public static List<Double> getWaveform(String filePath, long sampleCount, String channel, double frame, double fps) {
+        int samples = (int) Math.max(2, Math.min(sampleCount, 10000));
+        if (filePath == null || filePath.trim().isEmpty()) {
+            ImmutableList.Builder<Double> def = ImmutableList.builder();
+            double phase = frame * 0.1;
+            for (int i = 0; i < samples; i++) {
+                double t = (double) i / (double) samples;
+                def.add(0.4 * Math.sin(t * Math.PI * 8.0 + phase) * Math.sin(t * Math.PI));
+            }
+            return def.build();
+        }
+
+        CachedAudio audio = loadAudio(filePath);
+        if (audio == null || audio.samplesLeft == null || audio.samplesLeft.length == 0) {
+            return Collections.emptyList();
+        }
+
         float[] src = "right".equalsIgnoreCase(channel) && audio.samplesRight != null
                 ? audio.samplesRight
                 : audio.samplesLeft;
 
-        if (src == null || src.length == 0) return Collections.emptyList();
-
+        int step = Math.max(1, src.length / samples);
         ImmutableList.Builder<Double> b = ImmutableList.builder();
-        double step = (double) src.length / targetSamples;
 
-        for (int i = 0; i < targetSamples; i++) {
-            int startIdx = (int) (i * step);
-            int endIdx = (int) Math.min(src.length, (i + 1) * step);
-            if (endIdx <= startIdx) endIdx = startIdx + 1;
-
-            float peak = 0.0f;
-            for (int j = startIdx; j < endIdx && j < src.length; j++) {
+        for (int i = 0; i < samples; i++) {
+            int start = i * step;
+            int end = Math.min(start + step, src.length);
+            float peak = 0;
+            for (int j = start; j < end; j++) {
                 float val = src[j];
                 if (Math.abs(val) > Math.abs(peak)) {
                     peak = val;
@@ -71,44 +83,60 @@ public final class SoundFileUtils {
         return b.build();
     }
 
-    /**
-     * Compute approximate frequency spectrum magnitude bins from the audio.
-     */
     public static List<Double> getSpectrum(String filePath, long bandCount) {
+        return getSpectrum(filePath, bandCount, 1.0, 24.0, 1.0);
+    }
+
+    public static List<Double> getSpectrum(String filePath, long bandCount, double frame, double fps, double speed) {
+        int bands = (int) Math.max(2, Math.min(bandCount, 256));
+        if (filePath == null || filePath.trim().isEmpty()) {
+            ImmutableList.Builder<Double> def = ImmutableList.builder();
+            double fOffset = frame * 0.15;
+            for (int k = 0; k < bands; k++) {
+                double t = (double) k / (double) bands;
+                double val = 0.35 * Math.sin(t * Math.PI + fOffset)
+                        + 0.20 * Math.sin(t * Math.PI * 3.0 - fOffset * 1.5)
+                        + 0.15 * Math.cos(fOffset * 0.8 + k) + 0.25;
+                def.add(Math.max(0.05, Math.abs(val)));
+            }
+            return def.build();
+        }
+
         CachedAudio audio = loadAudio(filePath);
         if (audio == null || audio.samplesLeft == null || audio.samplesLeft.length == 0) {
             return Collections.emptyList();
         }
 
-        int bands = (int) Math.max(2, Math.min(bandCount, 256));
         float[] src = audio.samplesLeft;
-
-        // Perform simple multi-band FFT-like energy calculation across the audio
         int windowSize = Math.min(2048, src.length);
+        double rate = audio.sampleRate > 0 ? audio.sampleRate : 44100.0;
+        double frameRate = fps > 0 ? fps : 24.0;
+        double timeSec = Math.max(0.0, (frame - 1.0) / frameRate) * (speed > 0 ? speed : 1.0);
+        long sampleOffset = (long) (timeSec * rate);
+        if (src.length > 0) {
+            sampleOffset = sampleOffset % src.length;
+        }
+
         double[] magnitudes = new double[bands];
-
-        int windows = Math.min(20, src.length / windowSize);
-        if (windows <= 0) windows = 1;
-
-        for (int w = 0; w < windows; w++) {
-            int offset = (src.length / windows) * w;
-            for (int k = 0; k < bands; k++) {
-                double real = 0;
-                double imag = 0;
-                int freqBin = Math.max(1, (k * windowSize) / (2 * bands));
-                for (int n = 0; n < windowSize && (offset + n) < src.length; n++) {
-                    double angle = 2.0 * Math.PI * freqBin * n / windowSize;
-                    double sample = src[offset + n];
-                    real += sample * Math.cos(angle);
-                    imag -= sample * Math.sin(angle);
-                }
-                magnitudes[k] += Math.hypot(real, imag) / windowSize;
+        int start = (int) sampleOffset;
+        for (int k = 0; k < bands; k++) {
+            double real = 0;
+            double imag = 0;
+            int freqBin = Math.max(1, (k * windowSize) / (2 * bands));
+            for (int n = 0; n < windowSize; n++) {
+                int idx = (start + n) % src.length;
+                double w = 0.5 * (1.0 - Math.cos(2.0 * Math.PI * n / (windowSize - 1)));
+                double sample = src[idx] * w;
+                double angle = 2.0 * Math.PI * freqBin * n / windowSize;
+                real += sample * Math.cos(angle);
+                imag -= sample * Math.sin(angle);
             }
+            magnitudes[k] = Math.hypot(real, imag) / (windowSize * 0.25);
         }
 
         ImmutableList.Builder<Double> result = ImmutableList.builder();
         for (int k = 0; k < bands; k++) {
-            result.add(magnitudes[k] / windows);
+            result.add(Math.min(2.0, magnitudes[k]));
         }
         return result.build();
     }

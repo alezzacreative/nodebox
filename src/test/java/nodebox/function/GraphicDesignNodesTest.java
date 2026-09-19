@@ -289,5 +289,35 @@ public class GraphicDesignNodesTest {
             assertNotNull("Root node should exist for " + f.getName(), lib.getRoot());
         }
     }
+
+    @Test
+    public void testManualRecipesLoad() {
+        NodeRepository repo = NodeRepository.of(
+                NodeLibrary.loadSystemLibrary("math"),
+                NodeLibrary.loadSystemLibrary("string"),
+                NodeLibrary.loadSystemLibrary("color"),
+                NodeLibrary.loadSystemLibrary("list"),
+                NodeLibrary.loadSystemLibrary("data"),
+                NodeLibrary.loadSystemLibrary("corevector"),
+                NodeLibrary.loadSystemLibrary("device"),
+                NodeLibrary.loadSystemLibrary("network")
+        );
+        File[] recipeFiles = new File[]{
+                new File("examples/02 Topics/Manual Recipes/01 Moroccan Rosette Wallpaper/01 Moroccan Rosette Wallpaper.ndbx"),
+                new File("examples/02 Topics/Manual Recipes/02 Golden Ratio Duplicator/02 Golden Ratio Duplicator.ndbx"),
+                new File("examples/02 Topics/Manual Recipes/03 Audio Reactive Visualizer/03 Audio Reactive Visualizer.ndbx"),
+                new File("examples/02 Topics/Manual Recipes/04 Flow Field Typography Poster/04 Flow Field Typography Poster.ndbx"),
+                new File("examples/02 Topics/Manual Recipes/05 Geometric Round Corners Branding/05 Geometric Round Corners Branding.ndbx"),
+                new File("examples/02 Topics/Manual Recipes/06 Halftone Stippled Engraving/06 Halftone Stippled Engraving.ndbx"),
+                new File("examples/02 Topics/Manual Recipes/07 Mouse Gravity Vortex/07 Mouse Gravity Vortex.ndbx"),
+                new File("examples/02 Topics/Manual Recipes/08 Multi-Artboard Campaign/08 Multi-Artboard Campaign.ndbx")
+        };
+        for (File f : recipeFiles) {
+            assertTrue("Recipe file should exist: " + f.getPath(), f.exists());
+            NodeLibrary lib = NodeLibrary.load(f, repo);
+            assertNotNull("Loaded recipe library should not be null for " + f.getName(), lib);
+            assertNotNull("Root node should exist for " + f.getName(), lib.getRoot());
+        }
+    }
 }
 

@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<ndbx formatVersion="22" type="file" uuid="a1111111-2222-3333-4444-555555555507">
+    <property name="canvasHeight" value="800"/>
+    <property name="canvasWidth" value="800"/>
+    <node name="root" prototype="core.network" renderedChild="combine_all">
+        <node name="points_grid" position="1.00,1.00" prototype="corevector.grid">
+            <port name="columns" type="int" value="20"/>
+            <port name="rows" type="int" value="20"/>
+            <port name="width" type="float" value="500.0"/>
+            <port name="height" type="float" value="500.0"/>
+        </node>
+        <node name="mouse" position="5.00,1.00" prototype="device.mouse_position"/>
+        <node name="vortex_attractor" position="1.00,3.00" prototype="corevector.attractor">
+            <port name="force" type="float" value="120.0"/>
+            <port name="radius" type="float" value="300.0"/>
+            <port name="mode" type="string" value="vortex"/>
+        </node>
+        <node name="dots" position="1.00,5.00" prototype="corevector.ellipse">
+            <port name="width" type="float" value="8.0"/>
+            <port name="height" type="float" value="8.0"/>
+        </node>
+        <node name="color_dots" position="1.00,7.00" prototype="corevector.colorize">
+            <port name="fill" type="color" value="#ec4899dd"/>
+            <port name="stroke" type="color" value="#f472b6ff"/>
+            <port name="strokeWidth" type="float" value="1.0"/>
+        </node>
+        <node name="vortex_title" position="5.00,3.00" prototype="corevector.fit_text">
+            <port name="text" type="string" value="RECIPE 7: INTERACTIVE MOUSE GRAVITY VORTEX"/>
+            <port name="fontName" type="string" value="Helvetica"/>
+            <port name="position" type="point" value="0.00,-330.00"/>
+            <port name="width" type="float" value="620.0"/>
+            <port name="height" type="float" value="28.0"/>
+            <port name="alignment" type="string" value="CENTER"/>
+        </node>
+        <node name="color_title" position="5.00,5.00" prototype="corevector.colorize">
+            <port name="fill" type="color" value="#f472b6ff"/>
+        </node>
+        <node name="combine_all" position="3.00,9.00" prototype="list.combine"/>
+        <conn input="vortex_attractor.shape" output="points_grid"/>
+        <conn input="vortex_attractor.position" output="mouse"/>
+        <conn input="dots.position" output="vortex_attractor"/>
+        <conn input="color_dots.shape" output="dots"/>
+        <conn input="color_title.shape" output="vortex_title"/>
+        <conn input="combine_all.list1" output="color_dots"/>
+        <conn input="combine_all.list2" output="color_title"/>
+    </node>
+</ndbx>
